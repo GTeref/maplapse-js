@@ -1,0 +1,238 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 
+                 "Helvetica Neue", Arial, sans-serif;
+  }
+  
+  /* Main container */
+  .app-overseer-container {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  /* Header styles */
+  .app-header {
+    height: 4rem;
+    background-color: white;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    flex-shrink: 0;
+    z-index: 30;
+  }
+  
+  .app-body {
+    display: flex;
+    flex: 1;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .header-menu-button, 
+  .header-settings-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: #4b5563;
+    transition: all 0.2s ease;
+  }
+  
+  .header-menu-button:hover, 
+  .header-settings-button:hover {
+    background-color: #f3f4f6;
+    color: #111827;
+  }
+  
+  .header-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+  }
+  
+  /* Sidebar */
+  .sidebar-container {
+    background-color: white;
+    border-right: 1px solid #e5e7eb;
+    width: 16rem;
+    height: 100%;
+    transition: transform 0.3s ease-in-out;
+    flex-shrink: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 20;
+  }
+  
+  .sidebar-container.closed {
+    transform: translateX(-16rem);
+  }
+  
+  .sidebar-content {
+    padding: 1rem;
+    height: 100%;
+    overflow-y: auto;
+  }
+  
+  .sidebar-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #111827;
+  }
+  
+  .dataset-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .dataset-selector-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    color: #374151;
+  }
+  
+  .dataset-selector-option:hover {
+    background-color: #f3f4f6;
+    border-radius: 0.375rem;
+  }
+  
+  /* Map container */
+  .map-view-container {
+    flex: 1;
+    position: relative;
+    min-width: 0;
+    height: 100%;
+    margin-left: 16rem;
+    transition: margin-left 0.3s ease-in-out;
+  }
+  
+  .sidebar-container.closed + .map-view-container {
+    margin-left: 0;
+  }
+  
+  .map-view-content {
+    position: absolute;
+    inset: 0;
+    background-color: #f3f4f6;
+    overflow: hidden;
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+  
+  /* Plotly container */
+  .plotly-container {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+  
+  /* Sidebar toggle button */
+  .sidebar-toggle-button {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background-color: white;
+    padding: 0.5rem;
+    border-radius: 9999px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 30;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    color: #4b5563;
+    transition: all 0.2s ease;
+  }
+  
+  .sidebar-toggle-button:hover {
+    background-color: #f9fafb;
+    color: #111827;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Time slider */
+  .time-slider-container {
+    height: 6rem;
+    background-color: white;
+    border-top: 1px solid #e5e7eb;
+    padding: 1rem;
+    flex-shrink: 0;
+    z-index: 30;
+  }
+  
+  .time-slider-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .time-slider-label {
+    font-weight: 500;
+    color: #374151;
+  }
+  
+  .time-slider-input {
+    width: 100%;
+    cursor: pointer;
+  }
+  
+  /* Reset button styles */
+  button {
+    padding: 0;
+    background: none;
+    border: none;
+    font: inherit;
+    color: inherit;
+  }
+  
+  button:focus {
+    outline: none;
+  }
+  
+  /* Lucide icon styles */
+  [icon-name] {
+    width: 24px;
+    height: 24px;
+    stroke-width: 2;
+    stroke: currentColor;
+  }

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MapLapse</title>
+    <link rel="stylesheet" href="app.css">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body>
+    <div class="app-overseer-container">
+        <header class="app-header">
+            <div class="header-left">
+                <button id="menu-button" class="header-menu-button">
+                    <i icon-name="menu"></i>
+                </button>
+                <h1 class="header-title">MapLapse</h1>
+            </div>
+            <button class="header-settings-button">
+                <i icon-name="settings"></i>
+            </button>
+        </header>
+
+        <div class="app-body">
+            <aside id="sidebar" class="sidebar-container">
+                <div class="sidebar-content">
+                    <h2 class="sidebar-title">
+                        Available Datasets
+                    </h2>
+                    <div class="dataset-selector">
+                        <label class="dataset-selector-option">
+                            <input type="radio" name="dataset" value="Race and Ethnicity" checked>
+                            Race and Ethnicity
+                        </label>
+                        <label class="dataset-selector-option">
+                            <input type="radio" name='dataset' value="Language Proficiency">
+                            Language Proficiency
+                        </label>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="map-view-container">
+                <div class="map-view-content">
+                    <div id="map" class="plotly-container">
+                        <!--we will insert the plotly map here-->
+                    </div>
+                </div>
+                <button id="sidebar-toggle" class="sidebar-toggle-button">
+                    <i id="sidebar-toggle-icon" icon-name="chevron-left"></i>
+                </button>
+            </main>
+        </div>
+
+        <div class="time-slider-container">
+            <div class="time-slider-content">
+                <label for="time-slider" class="time-slider-label">
+                    Year: <span id="year-display">2024</span>
+                </label>
+                <input id="time-slider" type="range" min="2000" max="2024" value="2024" class="time-slider-input">
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
