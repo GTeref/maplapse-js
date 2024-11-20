@@ -32,13 +32,39 @@
                     </h2>
                     <div class="dataset-selector">
                         <label class="dataset-selector-option">
-                            <input type="radio" name="dataset" value="Race and Ethnicity" checked>
+                            <input type="radio" name="dataset" value="Race and Ethnicity">
                             Race and Ethnicity
                         </label>
                         <label class="dataset-selector-option">
                             <input type="radio" name='dataset' value="Language Proficiency">
                             Language Proficiency
                         </label>
+
+                        <div id="race-options" class="race-options-container">
+                            <div class="race-selector">
+                                <label for="race-select" class="race-select-label">
+                                    Select Race:
+                                </label>
+                                <select id="race-select" class='race-select' disabled>
+                                    <option value="1">White</option>
+                                    <option value="2">Black or African American</option>
+                                    <option value="3">American Indian and Alaska Native</option>
+                                    <option value="4">Asian</option>
+                                    <option value="5">Native Hawaiian and Other Pacific Islander</option>
+                                    <option value="6">Two or More Races</option>
+                                </select>
+                            </div>
+
+                            <div class="hispanic-selector">
+                                <label for="hispanic-select" class="hispanic-select-label">
+                                    Hispanic Origin:
+                                </label>
+                                <select id="hispanic-select" class="hispanic-select" disabled>
+                                    <option value="0">Not Hispanic or Latino</option>
+                                    <option value="1">Hispanic or Latino</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </aside>
@@ -47,6 +73,10 @@
                 <div class="map-view-content">
                     <div id="map" class="plotly-container">
                         <!--we will insert the plotly map here-->
+                        <!--if no option selected, display placeholder-->
+                        <div id="map-placeholder" class="map-placeholder">
+                            Select a dataset to get started
+                        </div>
                     </div>
                 </div>
                 <button id="sidebar-toggle" class="sidebar-toggle-button">
@@ -60,7 +90,7 @@
                 <label for="time-slider" class="time-slider-label">
                     Year: <span id="year-display">2024</span>
                 </label>
-                <input id="time-slider" type="range" min="2000" max="2024" value="2024" class="time-slider-input">
+                <input id="time-slider" type="range" min="2018" max="2019" value="2019" class="time-slider-input">
             </div>
         </div>
     </div>
