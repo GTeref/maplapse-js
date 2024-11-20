@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let state={
         sidebarOpen: true,
         selectedDataset: null,
-        currentYear: 2024,
+        currentYear: 2019,
         mapData: null,
         selectedRace: '1',
         selectedHispanic: '0'
