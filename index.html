@@ -46,12 +46,12 @@
                                     Select Race:
                                 </label>
                                 <select id="race-select" class='race-select' disabled>
-                                    <option value="1">White</option>
-                                    <option value="2">Black or African American</option>
-                                    <option value="3">American Indian and Alaska Native</option>
-                                    <option value="4">Asian</option>
-                                    <option value="5">Native Hawaiian and Other Pacific Islander</option>
-                                    <option value="6">Two or More Races</option>
+                                    <option value="2">White</option>
+                                    <option value="3">Black or African American</option>
+                                    <option value="4">American Indian and Alaska Native</option>
+                                    <option value="5">Asian</option>
+                                    <option value="6">Native Hawaiian and Other Pacific Islander</option>
+                                    <option value="7">Two or More Races</option>
                                 </select>
                             </div>
 
@@ -64,6 +64,22 @@
                                     <option value="1">Hispanic or Latino</option>
                                 </select>
                             </div>
+                        </div>
+
+                        <div id="language-options" class="language-options-container">
+                            <div class="language-selector">
+                                <label for="language-select" class="language-select-label">Select Language:</label>
+                                <select id="language-select" class="language-select"disabled>   
+                                    <option value="1">Population 5 years and over</option>
+                                    <option value="2">Speak only English</option>
+                                    <option value="3">Speak a language other than English at home</option>
+                                    <option value="4">Spanish and Spanish Creole</option>
+                                    <option value="5">Other Indo-European Languages</option>
+                                    <option value="6">Asian and Pacific Island Languages</option>
+                                    <option value="7">All Other Languages</option>
+                                </select>
+                            </div>
+                            <h2>NOTE: Spanish and Spanish Creole does not work (the API call literally returns nothing)</h2>
                         </div>
                     </div>
                 </div>
