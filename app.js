@@ -9,7 +9,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const yearDisplay = document.getElementById('year-display')
     const datasetInputs = document.querySelectorAll('input[name="dataset"]')
 
+    const regionSelect=document.getElementById('region-select')
+    const geographySelect=document.getElementById('geography-select')
+    const datasetSelect=document.getElementById('dataset-select')
+    const geographyGroup=document.getElementById('geography-group')
+    const datasetGroup=document.getElementById('dataset-group')
+
+    const datasetOptions=document.getElementById('dataset-options')
     const raceOptions = document.getElementById('race-options')
+    const languageOptions=document.getElementById('language-options')
     const raceSelect = document.getElementById('race-select')
     const hispSelect = document.getElementById('hispanic-select')
     const langSelect=document.getElementById('language-select')
@@ -18,12 +26,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let state={
         sidebarOpen: true,
+        region: '',
+        geographyLevel: '',
         selectedDataset: null,
         currentYear: 2019,
         mapData: null,
         selectedRace: '1',
         selectedHispanic: '0',
         selectedLanguage: '2'
+    }
+
+    // dataset configurations
+    const datasetConfig={
+        US:{
+            state:[
+                {value: 'race-ethnicity', label: 'Race and Ethnicity', options: 'race-options'},
+                {value: 'language-proficiency', label: 'Language Proficiency', options: 'language-options'}
+            ],
+            county:[
+                {value: 'race-ethnicity', label: 'Race and Ethnicity', options: 'race-options'}
+            ]
+        },
+        Indonesia: {
+            state: [
+                { value: 'disease', label: 'Disease Distribution' }
+            ],
+            county: []
+        },
+        World: {
+            state: [
+                { value: 'population', label: 'Population Distribution' }
+            ]
+        }
     }
 
     raceSelect.disabled = true;
@@ -33,9 +67,13 @@ document.addEventListener('DOMContentLoaded', function() {
     sidebarToggle.addEventListener('click', toggleSidebar)
     timeSlider.addEventListener('input', handleTimeChange)
 
-    datasetInputs.forEach(input => {
-        input.addEventListener('change', handleDatasetChange)
-    })
+    regionSelect.addEventListener('change', handleRegionChange);
+    geographySelect.addEventListener('change', handleGeographyChange);
+    datasetSelect.addEventListener('change', handleDatasetChange);
+
+    // datasetInputs.forEach(input => {
+    //     input.addEventListener('change', handleDatasetChange)
+    // })
 
     raceSelect.addEventListener('change', handleRaceChange)
     hispSelect.addEventListener('change', handleHispanicChange)
@@ -48,6 +86,56 @@ document.addEventListener('DOMContentLoaded', function() {
         sidebar.classList.toggle('closed', !state.sidebarOpen)
         sidebarToggleIcon.setAttribute('icon-name', state.sidebarOpen ? 'chevron-left' : 'chevron-right')
         lucide.createIcons()
+    }
+
+    function showElement(element,show=true){
+        element.classList.toggle('visible', show)
+    }
+
+    function updateDropdownOptions(select,options,enableSelect=true){
+        select.innerHTML=options.reduce((html,option)=>{
+            return html+ `<option value="${option.value}">${option.label}</option>`
+        }, '<option value="">Choose an option...</option>')
+        select.disabled=!enableSelect
+    }
+
+    function handleRegionChange(e) {
+        state.region=e.target.value
+
+        if (state.region){
+            showElement(geographyGroup, true)
+            geographySelect.disabled=false
+
+            state.geographyLevel=''
+            state.selectedDataset=''
+            geographySelect.value=''
+            datasetSelect.value=''
+            showElement(datasetGroup,false)
+            showElement(datasetOptions,false)
+
+            mapPlaceholder.textContent='Select a geography level'
+        } else{
+            resetSelections()
+        }
+    }
+
+    function handleGeographyChange(e){
+        state.geographyLevel=e.target.value
+
+        if (state.geographyLevel){
+            showElement(datasetGroup,true)
+            datasetSelect.disabled=false
+
+            const datasets=datasetConfig[state.region]?.[state.geographyLevel] || []
+            updateDropdownOptions(datasetSelect,datasets)
+
+            state.selectedDataset=''
+            showElement(datasetOptions,false)
+
+            mapPlaceholder.textContent='Select a dataset'
+        } else{
+            resetDatasetSelections()
+        }
     }
 
     function handleTimeChange(e) {
@@ -63,47 +151,48 @@ document.addEventListener('DOMContentLoaded', function() {
         state.selectedDataset = e.target.value
         //toggleRaceOptions()
 
-        const raceOptionsDiv=document.getElementById('race-options')
-        const langOptionsDiv=document.getElementById('language-options')
-        
-        // if Race and Ethnicity selected, hide language select dropdown
-        if (state.selectedDataset==='Race and Ethnicity') {
-            raceOptionsDiv.classList.add('visible')
-            langOptionsDiv.classList.remove('visible')
-            raceSelect.disabled=false
-            hispSelect.disabled=false
-            langSelect.disabled=true
+        raceOptions.classList.remove('visible')
+        languageOptions.classList.remove('visible')
 
-            timeSlider.min='2015'
-            timeSlider.max='2019'
-            timeSlider.value='2019'
-            state.currentYear=2019
-            yearDisplay.textContent=2019
-        } else if (state.selectedDataset==='Language Proficiency') {
-            raceOptionsDiv.classList.remove('visible')
-            langOptionsDiv.classList.add('visible')
-            raceSelect.disabled=true
-            hispSelect.disabled=true
-            langSelect.disabled=false
-            
-            // i just realized the ACS language dataset only has one year....
-            timeSlider.min='2013'
-            timeSlider.max='2013'
-            timeSlider.value='2013'
-            state.currentYear=2013
-            yearDisplay.textContent=2013
-        }
+        // const raceOptionsDiv=document.getElementById('race-options')
+        // const langOptionsDiv=document.getElementById('language-options')
 
-        // const isRaceDataset = state.selectedDataset === 'Race and Ethnicity'
-        // raceSelect.disabled = !isRaceDataset
-        // hispSelect.disabled = !isRaceDataset
+        if (state.selectedDataset){
+            showElement(datasetOptions,true)
 
-        if (state.selectedDataset) {
-            mapPlaceholder.style.display = 'none'
-            fetchAndUpdateMap()
+            // if Race and Ethnicity selected, hide language select dropdown
+            if (state.selectedDataset==='race-ethnicity') {
+                raceOptions.classList.add('visible')
+                languageOptions.classList.remove('visible')
+                raceSelect.disabled=false
+                hispSelect.disabled=false
+                langSelect.disabled=true
+
+                timeSlider.min='2015'
+                timeSlider.max='2019'
+                timeSlider.value='2019'
+                timeSlider.disaled=false
+                state.currentYear=2019
+                yearDisplay.textContent=2019
+            } else if (state.selectedDataset==='language') {
+                raceOptions.classList.remove('visible')
+                languageOptions.classList.add('visible')
+                raceSelect.disabled=true
+                hispSelect.disabled=true
+                langSelect.disabled=false
+                
+                // i just realized the ACS language dataset only has one year....
+                timeSlider.min='2013'
+                timeSlider.max='2013'
+                timeSlider.value='2013'
+                timeSlider.disabled=true
+                state.currentYear=2013
+                yearDisplay.textContent=2013
+            }
         } else {
+            timeSlider.disabled=true
             mapPlaceholder.style.display = 'block'
-            Plotly.purge('map')
+            //Plotly.purge('map')
         }
         //fetchAndUpdateMap()
     }
@@ -126,6 +215,33 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleLangChange(e) {
         state.selectedLanguage=e.target.value
         fetchAndUpdateMap()
+    }
+
+    function resetSelections(){
+        state.region=''
+        state.geographyLevel=''
+        state.selectedDataset=''
+
+        geographySelect.value=''
+        geographySelect.disabled=true
+        showElement(geographyGroup,false)
+
+        resetDatasetSelections()
+
+        mapPlaceholder.textContent='Select a region to get started'
+        mapPlaceholder.style.display='block'
+    }
+
+    function resetDatasetSelections() {
+        datasetSelect.value=''
+        datasetSelect.disabled=true
+        showElement(datasetGroup,false)
+        showElement(datasetOptions,false)
+        timeSlider.disabled=true
+
+        if (state.region && !state.geographyLevel){
+            mapPlaceholder.textContent='Select a geography level'
+        }
     }
     
 

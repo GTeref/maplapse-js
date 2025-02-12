@@ -30,22 +30,57 @@
                     <h2 class="sidebar-title">
                         Available Datasets
                     </h2>
-                    <div class="dataset-selector">
-                        <label class="dataset-selector-option">
+                    <div class="dropdown-container">
+                        <div class="dropdown-group visible">
+                            <label for="region-select" class="dropdown-label">
+                                Select Region:
+                            </label>
+                            <select id="region-select" class="dropdown-select">
+                                <option value="">Please select a region.</option>
+                                <option value="US">United States</option>
+                                <option value="Indonesia">Indonesia</option>
+                                <option value="World">World</option>
+                            </select>
+                        </div>
+
+                        <div id="geography-group" class="dropdown-group">
+                            <label for="geography-select" class="dropdown-label">
+                                Select Geography:
+                            </label> 
+                            <select id="geography-select" class="dropdown-select">
+                                <option value="">Please choose a geography level.</option>
+                                <option value="state">State/Province</option>
+                                <option value="county">County/District</option>
+                            </select>
+                        </div>
+
+                        <div id="dataset-group" class="dropdown-group">
+                            <label for="dataset-select" class="dropdown-label">
+                                Select Dataset:
+                            </label>
+                            <select id="dataset-select" class="dropdown-select">
+                                <option value="">Please choose a dataset.</option>
+                                <!--can dynamically insert datasets here-->
+                            </select>
+                        </div>
+
+
+                        <!-- <label class="dataset-selector-option">
                             <input type="radio" name="dataset" value="Race and Ethnicity">
                             Race and Ethnicity
                         </label>
                         <label class="dataset-selector-option">
                             <input type="radio" name='dataset' value="Language Proficiency">
                             Language Proficiency
-                        </label>
-
-                        <div id="race-options" class="race-options-container">
-                            <div class="race-selector">
-                                <label for="race-select" class="race-select-label">
+                        </label> -->
+                        
+                        <div id="dataset-options" class="dataset-options-container">
+                            <div id="race-options" class="dropdown-group">
+                                
+                                <label for="race-select" class="dropdown-label">
                                     Select Race:
                                 </label>
-                                <select id="race-select" class='race-select' disabled>
+                                <select id="race-select" class='dropdown-select' disabled>
                                     <option value="2">White</option>
                                     <option value="3">Black or African American</option>
                                     <option value="4">American Indian and Alaska Native</option>
@@ -53,36 +88,38 @@
                                     <option value="6">Native Hawaiian and Other Pacific Islander</option>
                                     <option value="7">Two or More Races</option>
                                 </select>
-                            </div>
-
-                            <div class="hispanic-selector">
-                                <label for="hispanic-select" class="hispanic-select-label">
+                                
+    
+                                
+                                <label for="hispanic-select" class="dropdown-label">
                                     Hispanic Origin:
                                 </label>
-                                <select id="hispanic-select" class="hispanic-select" disabled>
+                                <select id="hispanic-select" class="dropdown-select" disabled>
                                     <option value="0">Not Hispanic or Latino</option>
                                     <option value="1">Hispanic or Latino</option>
                                 </select>
+                                
+                            </div>
+    
+                            <div id="language-options" class="dropdown-group">
+                                <div class="language-selector">
+                                    <label for="language-select" class="dropdown-label">Select Language:</label>
+                                    <select id="language-select" class="dropdown-select"disabled>   
+                                        <option value="1">Population 5 years and over</option>
+                                        <option value="2">Speak only English</option>
+                                        <option value="3">Speak a language other than English at home</option>
+                                        <option value="4">Spanish and Spanish Creole</option>
+                                        <option value="5">Other Indo-European Languages</option>
+                                        <option value="6">Asian and Pacific Island Languages</option>
+                                        <option value="7">All Other Languages</option>
+                                    </select>
+                                </div>
+                                <h3>For Language Proficiency, US Census only has data for 2013 so slider is fixed.</h3>
+                                <br>
+                                <h3>NOTE: Spanish and Spanish Creole does not work (the API call literally returns nothing)</h3>
                             </div>
                         </div>
-
-                        <div id="language-options" class="language-options-container">
-                            <div class="language-selector">
-                                <label for="language-select" class="language-select-label">Select Language:</label>
-                                <select id="language-select" class="language-select"disabled>   
-                                    <option value="1">Population 5 years and over</option>
-                                    <option value="2">Speak only English</option>
-                                    <option value="3">Speak a language other than English at home</option>
-                                    <option value="4">Spanish and Spanish Creole</option>
-                                    <option value="5">Other Indo-European Languages</option>
-                                    <option value="6">Asian and Pacific Island Languages</option>
-                                    <option value="7">All Other Languages</option>
-                                </select>
-                            </div>
-                            <h3>For Language Proficiency, US Census only has data for 2013 so slider is fixed.</h3>
-                            <br>
-                            <h3>NOTE: Spanish and Spanish Creole does not work (the API call literally returns nothing)</h3>
-                        </div>
+                        
                     </div>
                 </div>
             </aside>
