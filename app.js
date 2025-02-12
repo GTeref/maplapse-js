@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedDataset: null,
         currentYear: 2019,
         mapData: null,
-        selectedRace: '1',
+        selectedRace: '2',
         selectedHispanic: '0',
         selectedLanguage: '2'
     }
@@ -171,10 +171,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 timeSlider.min='2015'
                 timeSlider.max='2019'
                 timeSlider.value='2019'
-                timeSlider.disaled=false
+                timeSlider.disabled=false
                 state.currentYear=2019
                 yearDisplay.textContent=2019
-            } else if (state.selectedDataset==='language') {
+            } else if (state.selectedDataset==='language-proficiency') {
                 raceOptions.classList.remove('visible')
                 languageOptions.classList.add('visible')
                 raceSelect.disabled=true
@@ -189,6 +189,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 state.currentYear=2013
                 yearDisplay.textContent=2013
             }
+            mapPlaceholder.style.display='none'
+            fetchAndUpdateMap()
         } else {
             timeSlider.disabled=true
             mapPlaceholder.style.display = 'block'
@@ -260,15 +262,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // fetch data from the dropdown menus to feed into url
-        const hispParam = state.selectedDataset === 'Race and Ethnicity' ? `&HISP=${state.selectedHispanic}` : '';
-        const raceParam = state.selectedDataset === 'Race and Ethnicity' ? `&RACE=${state.selectedRace}` : '';
-        const langParam=state.selectedDataset==='Language Proficiency' ? `&LAN7=${state.selectedLanguage}`: ''
+        const hispParam = state.selectedDataset === 'race-ethnicity' ? `&HISP=${state.selectedHispanic}` : '';
+        const raceParam = state.selectedDataset === 'race-ethnicity' ? `&RACE=${state.selectedRace}` : '';
+        const langParam=state.selectedDataset==='language-proficiency' ? `&LAN7=${state.selectedLanguage}`: ''
 
         let requestURL;
-        if (state.selectedDataset==='Race and Ethnicity') {
+        if (state.selectedDataset==='race-ethnicity') {
             const nameField = state.currentYear <= 2018 ? 'GEONAME' : 'NAME'
             requestURL= `https://api.census.gov/data/${state.currentYear}/pep/charagegroups?get=${nameField},POP${raceParam}${hispParam}&for=state:*`
-        } else if (state.selectedDataset==='Language Proficiency') {
+        } else if (state.selectedDataset==='language-proficiency') {
             requestURL = `https://api.census.gov/data/2013/language?get=EST,LANLABEL,NAME&for=state:*${langParam}`
         }
         
@@ -277,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("Fetching from:", requestURL)
         const json = await response.json();
         const rows = json.slice(1).map(row => {
-            if (state.selectedDataset ==='Race and Ethnicity') {
+            if (state.selectedDataset ==='race-ethnicity') {
                 return {
                     state: row[4],
                     NAME: row[0],
@@ -324,7 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
             locations: unpack(rows, 'state').map(code => codeToState[code]),
             z: unpack(rows, 'POP').map(Number),
             text: unpack(rows, 'NAME'),
-            colorscale: state.selectedDataset === 'Language Proficiency' ? [
+            colorscale: state.selectedDataset === 'language-proficiency' ? [
                 [0, 'rgb(240, 247, 255)'],  // light blue
                 [1, 'rgb(31, 119, 180)']    // dark blue
             ] : [
@@ -362,7 +364,7 @@ document.addEventListener('DOMContentLoaded', function() {
             '7': 'All Other Languages'
         };
 
-        let title = state.selectedDataset === 'Race and Ethnicity' 
+        let title = state.selectedDataset === 'race-ethnicity' 
         ? `${state.currentYear} US Population - ${raceLabels[state.selectedRace]} (${hispanicLabels[state.selectedHispanic]})`
         : `2013 US Population - ${languageLabels[state.selectedLanguage]}`;
 
