@@ -24,6 +24,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const mapPlaceholder = document.getElementById('map-placeholder')
 
+    const MAPBOX_TOKEN='pk.eyJ1IjoiZ3RlcmVmIiwiYSI6ImNsdmU0Zmk3dzA1d3cycHA2b2R2MnZlengifQ.-P6AWaRKH710if95HmVTEA' // we should hide this lol
+
     let state={
         sidebarOpen: true,
         region: '',
@@ -31,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedDataset: null,
         currentYear: 2019,
         mapData: null,
-        selectedRace: '2',
+        selectedRace: '1',
         selectedHispanic: '0',
         selectedLanguage: '2'
     }
@@ -246,6 +248,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    async function fetchGeoJSON(){
+        try{
+            const response=await fetch('https://gist.githubusercontent.com/sdwfrost/d1c73f91dd9d175998ed166eb216994a/raw/e89c35f308cee7e2e5a784e1d3afc5d449e9e4bb/counties.geojson')
+            if (!response.ok) throw new Error('Failed to fetch county data')
+            return await response.json()
+        }   catch(e){
+            console.error('Error fetching county geojson:',error)
+            throw error
+        }
+    }
 
     async function fetchAndUpdateMap() {
         if (!state.selectedDataset) {
@@ -253,7 +265,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return
         }
 
+        const isCountyLevel=state.geographyLevel==='county'
+
         console.log('Current state:', {
+            region:state.region,
+            geographyLevel:state.geographyLevel,
             dataset: state.selectedDataset,
             race: state.selectedRace,
             hispanic: state.selectedHispanic,
