@@ -285,7 +285,8 @@ document.addEventListener('DOMContentLoaded', function() {
         let requestURL;
         if (state.selectedDataset==='race-ethnicity') {
             const nameField = state.currentYear <= 2018 ? 'GEONAME' : 'NAME'
-            requestURL= `https://api.census.gov/data/${state.currentYear}/pep/charagegroups?get=${nameField},POP${raceParam}${hispParam}&for=state:*`
+            const geoLevel=isCountyLevel ? 'county' : 'state'
+            requestURL= `https://api.census.gov/data/${state.currentYear}/pep/charagegroups?get=${nameField},POP${raceParam}${hispParam}&for=${geoLevel}:*`
         } else if (state.selectedDataset==='language-proficiency') {
             requestURL = `https://api.census.gov/data/2013/language?get=EST,LANLABEL,NAME&for=state:*${langParam}`
         }
@@ -294,6 +295,262 @@ document.addEventListener('DOMContentLoaded', function() {
         const response = await fetch(requestURL)
         console.log("Fetching from:", requestURL)
         const json = await response.json();
+
+        if (isCountyLevel && state.selectedDataset=='race-ethnicity'){
+            const geojson=await fetchGeoJSON()
+            await renderCountyMap(json, geojson)
+        } else{
+            renderStateMap(json)
+        }
+        
+    }
+
+    // async function renderCountyMap(data, geojson) {
+
+    //     if (window.countyMap) {
+    //         window.countyMap.remove();
+    //         window.countyMap = null;
+    //     }
+    //     // extracting population data from census API call
+    //     const response = await fetch(data);
+    //     const json = await response.json();
+    //     const rows = json.slice(1).map(row => ({
+    //         fips: row[3].padStart(2, '0') + row[4].padStart(3, '0'), // form the full county FIPS code
+    //         NAME: row[0],
+    //         POP: Number(row[1]),
+    //         RACE: row[2]
+    //     }));
+
+    //     // const totalPopulation = rows.reduce((sum, row) => sum + row.POP, 0)
+
+    //     // rows.forEach(row => {
+    //     //   row.POP_PERCENT = (row.POP / totalPopulation) * 100
+    //     // })
+
+    //     function unpack(rows, key) {
+    //         return rows.map(row => row[key]);
+    //     }
+
+    //     geojson.features.forEach(feature => {
+    //         feature.id = feature.properties.GEOID
+    //     });
+
+    //     const fipsValues = unpack(rows, 'fips');
+    
+    //     const raceLabels = {
+    //         '1': 'White',
+    //         '2': 'Black or African American',
+    //         '3': 'American Indian and Alaska Native',
+    //         '4': 'Asian',
+    //         '5': 'Native Hawaiian and Other Pacific Islander',
+    //         '6': 'Two or More Races'
+    //     };
+
+    //     const hispanicLabels = {
+    //         '0': 'Non-Hispanic',
+    //         '1': 'Hispanic'
+    //     };
+
+    //     const title = `${state.currentYear} US County Population - ${raceLabels[state.selectedRace]} (${hispanicLabels[state.selectedHispanic]})`;
+
+    //     // Check if geojson.features is defined and has the correct structure
+    //     if (geojson && geojson.features && geojson.features.length > 0) {
+    //         console.log(geojson.features.slice(0, 10).map(f => f.properties.GEOID));
+    //         console.log(rows.slice(0, 10).map(row => row.fips));
+
+    //         // Check if fips values match GEOID values
+    //         const fipsValues = rows.map(row => row.fips);
+    //         // const geoidValues = geojson.features.map(f => f.properties.GEOID);
+    //         var plotData = [{
+    //             type: 'choroplethmapbox',
+    //             geojson: geojson,
+    //             locations: fipsValues,
+    //             z: unpack(rows, 'POP'),
+    //             text: unpack(rows, 'NAME'),
+    //             colorscale: [
+    //                 [0, 'rgb(255, 245, 240)'],  // light red
+    //                 [1, 'rgb(103, 0, 13)']      // dark red
+    //             ],
+    //             marker: { 
+    //                 line: { 
+    //                     width: 0.5, 
+    //                     color: 'black' 
+    //                 } 
+    //             },
+    //             hovertemplate: '<b>%{text}</b><br>Population: %{z:,.0f}<extra></extra>'
+    //         }];
+
+    //         var layout = {
+    //             title: title,
+    //             mapbox: {
+    //             style: 'light',
+    //             center: { lon: -98.5795, lat: 39.8283 }, // center of the US
+    //             zoom: 3
+    //             },
+    //             //title: '2019 US Population by Selected Ethnicity',
+    //             width: 900,
+    //             height: 600,
+    //             margin: { t: 0, b: 0, l: 0, r: 0 }
+    //         };
+
+    //         //const mapDiv = DOM.element('div');
+    //         Plotly.newPlot(mapDiv, plotData, layout, {
+    //             mapboxAccessToken: MAPBOX_TOKEN
+    //         });
+    //         //return mapDiv;
+    //     } else {
+    //         console.error('Invalid geojson data.');
+    //     }
+    // }
+
+    async function renderCountyMap(data, geojson){
+        const rows=data.slice(1).map(row=>({
+            fips:row[4].padStart(2, '0')+ row[5].padStart(3, '0'),
+            NAME:row[0],
+            POP: Number(row[1])
+        }))
+
+        const popByFips = {}
+        rows.forEach(row=> {
+            popByFips[row.fips]=row.POP
+        })
+
+        const values=Object.values(popByFips)
+        const minPop=Math.min(...values)
+        const maxPop=Math.max(...values)
+
+        if (window.countyMap) {
+            window.countyMap.remove()
+        }
+
+        const map=new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/light-v10',
+            center: [-98.5795, 39.8283],
+            zoom: 3,
+            accessToken: MAPBOX_TOKEN
+        })
+
+        window.countyMap = map
+
+        console.log(`Total counties with data: ${rows.length}`);
+        console.log(`Sample FIPS codes: ${Object.keys(popByFips).slice(0, 5)}`);
+        console.log(`Min pop: ${minPop}, Max pop: ${maxPop}`);
+
+        let popup=null
+
+        map.on('load', ()=> {
+            const countyNames={}
+            geojson.features.forEach(feature=>{
+                if (feature.properties){
+                    feature.properties.FIPS=feature.properties.GEOID
+                    if (feature.properties.NAME){
+                        countyNames[feature.properties.GEOID]=feature.properties.NAME
+                    }
+                }
+            })
+
+            map.addSource('counties', {
+                type: 'geojson',
+                data: geojson
+            })
+
+            // geojson.features.forEach(feature => {
+
+            //     if (feature.properties) {
+            //         if (feature.properties.FIPS) {
+            //             feature.id = feature.properties.FIPS;
+            //         } else if (feature.properties.STATE && feature.properties.COUNTY) {
+            //             const stateFips = feature.properties.STATE.padStart(2, '0');
+            //             const countyFips = feature.properties.COUNTY.padStart(3, '0');
+            //             feature.id = stateFips + countyFips;
+            //             feature.properties.FIPS = feature.id;
+            //         } else if (feature.properties.id) {
+            //             feature.id = feature.properties.id;
+            //             feature.properties.FIPS = feature.id;
+            //         }
+            //     }
+            // });
+
+            map.addLayer({
+                id: 'counties-fill',
+                type: 'fill',
+                source: 'counties',
+                paint: {
+                    'fill-color': [
+                        'let',
+                        'fips', ['to-string', ['get', 'FIPS']],
+                        [
+                            'case',
+                            ['has', ['var', 'fips'], ['literal', popByFips]],
+                            [
+                                'interpolate',
+                                ['linear'],
+                                ['to-number', ['get', ['var', 'fips'], ['literal', popByFips]]],
+                                minPop, 'rgb(255, 245, 240)',
+                                maxPop, 'rgb(103, 0, 13)'
+                            ],
+                            'rgb(200, 200, 200)' 
+                        ]
+                    ],
+                    'fill-opacity': 0.7
+                }
+            })
+
+            map.addLayer({
+                id: 'counties-border',
+                type: 'line',
+                source: 'counties',
+                paint: {
+                    'line-color': '#000',
+                    'line-width': 0.5,
+                    'line-opacity': 0.3
+                }
+            })
+
+            // fancy hover effect
+            map.on('mousemove', 'counties-fill', (e) => {
+                map.getCanvas().style.cursor = 'pointer';
+            
+                if (e.features.length > 0) {
+                    const feature = e.features[0];
+                    const fips = feature.properties.FIPS;
+                    const countyName = feature.properties.NAME;
+                    const pop = popByFips[fips];
+                    
+                    if (popup) {
+                        popup.remove();
+                    }
+                    
+                    popup = new mapboxgl.Popup({
+                        closeButton: false,
+                        closeOnClick: false
+                    })
+                    .setLngLat(e.lngLat)
+                    .setHTML(`
+                        <strong>${countyName}</strong><br/>
+                        FIPS: ${fips}<br/>
+                        Population: ${pop ? pop.toLocaleString() : 'No data'}
+                    `)
+                    .addTo(map);
+                }
+            })
+
+            map.on('mouseleave', 'counties-fill', () => {
+                map.getCanvas().style.cursor = '';
+                if (popup) {
+                    popup.remove();
+                    popup = null;
+                }
+            })
+        })
+    }
+
+    function renderStateMap(json){
+        if (window.countyMap) {
+            window.countyMap.remove();
+            window.countyMap = null;
+        }
         const rows = json.slice(1).map(row => {
             if (state.selectedDataset ==='race-ethnicity') {
                 return {
