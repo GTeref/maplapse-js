@@ -46,7 +46,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 {value: 'language-proficiency', label: 'Language Proficiency', options: 'language-options'}
             ],
             county:[
-                {value: 'race-ethnicity', label: 'Race and Ethnicity', options: 'race-options'}
+                {value: 'race-ethnicity', label: 'Race and Ethnicity', options: 'race-options'},
+                {value: 'language-proficiency', label: 'Language Proficiency', options: 'language-options'}
             ]
         },
         Indonesia: {
@@ -82,6 +83,30 @@ document.addEventListener('DOMContentLoaded', function() {
     langSelect.addEventListener('change', handleLangChange)
 
     //toggleRaceOptions()
+
+    const raceLabels = {
+        '1': 'White',
+        '2': 'Black or African American',
+        '3': 'American Indian and Alaska Native',
+        '4': 'Asian',
+        '5': 'Native Hawaiian and Other Pacific Islander',
+        '6': 'Two or More Races'
+    };
+
+    const hispanicLabels = {
+        '0': 'Non-Hispanic',
+        '1': 'Hispanic'
+    };
+
+    const languageLabels = {
+        '1': 'Population 5 years and over',
+        '2': 'Speak only English',
+        '3': 'Speak a language other than English at home',
+        '4': 'Spanish and Spanish Creole', // this doesn't work for some reason
+        '5': 'Other Indo-European Languages',
+        '6': 'Asian and Pacific Island Languages',
+        '7': 'All Other Languages'
+    };
 
     function toggleSidebar() {
         state.sidebarOpen = !state.sidebarOpen
@@ -288,7 +313,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const geoLevel=isCountyLevel ? 'county' : 'state'
             requestURL= `https://api.census.gov/data/${state.currentYear}/pep/charagegroups?get=${nameField},POP${raceParam}${hispParam}&for=${geoLevel}:*`
         } else if (state.selectedDataset==='language-proficiency') {
-            requestURL = `https://api.census.gov/data/2013/language?get=EST,LANLABEL,NAME&for=state:*${langParam}`
+            const geoLevel=isCountyLevel ? 'county' : 'state'
+            requestURL = `https://api.census.gov/data/2013/language?get=EST,LANLABEL,NAME&for=${geoLevel}:*${langParam}`
         }
         
 
@@ -296,7 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("Fetching from:", requestURL)
         const json = await response.json();
 
-        if (isCountyLevel && state.selectedDataset=='race-ethnicity'){
+        if (isCountyLevel){
             const geojson=await fetchGeoJSON()
             await renderCountyMap(json, geojson)
         } else{
@@ -404,11 +430,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // }
 
     async function renderCountyMap(data, geojson){
-        const rows=data.slice(1).map(row=>({
-            fips:row[4].padStart(2, '0')+ row[5].padStart(3, '0'),
-            NAME:row[0],
-            POP: Number(row[1])
-        }))
+        const isLanguageData = state.selectedDataset === 'language-proficiency';
+        const rows=data.slice(1).map(row=>{
+            if (isLanguageData) {
+                return {
+                    fips: row[4].padStart(2, '0')+ row[5].padStart(3, '0'),
+                    NAME: row[2],
+                    POP: Number(row[0]),
+                    LABEL:row[1]
+                }
+            } else {
+                return {
+                    fips:row[4].padStart(2, '0')+ row[5].padStart(3, '0'),
+                    NAME:row[0],
+                    POP: Number(row[1])
+                }
+            }
+            
+        })
 
         const popByFips = {}
         rows.forEach(row=> {
@@ -450,6 +489,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
 
+            const colorMin = isLanguageData ? 'rgb(240, 247, 255)' : 'rgb(255, 245, 240)';
+            const colorMax = isLanguageData ? 'rgb(31, 119, 180)' : 'rgb(103, 0, 13)';
+
             map.addSource('counties', {
                 type: 'geojson',
                 data: geojson
@@ -486,9 +528,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             [
                                 'interpolate',
                                 ['linear'],
-                                ['to-number', ['get', ['var', 'fips'], ['literal', popByFips]]],
-                                minPop, 'rgb(255, 245, 240)',
-                                maxPop, 'rgb(103, 0, 13)'
+                                ['/',
+                                    ['ln', ['max', 1, ['to-number', ['get', ['var', 'fips'], ['literal', popByFips]]]]],
+                                    ['ln', ['max', 1, maxPop]]
+                                ],
+                                0, colorMin,
+                                1, colorMax
                             ],
                             'rgb(200, 200, 200)' 
                         ]
@@ -521,17 +566,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (popup) {
                         popup.remove();
                     }
+
+                    let popupHTML=`<strong>${countyName}</strong><br/>FIPS: ${fips}<br/>`
+
+                    if (state.selectedDataset === 'language-proficiency') {
+                        const categoryLabel = languageLabels[state.selectedLanguage];
+                        popupHTML += `${categoryLabel}: ${pop ? pop.toLocaleString() : 'No data'}`;
+                    } else {
+                        const raceLabel = raceLabels[state.selectedRace];
+                        const hispLabel = hispanicLabels[state.selectedHispanic];
+                        popupHTML += `${raceLabel} (${hispLabel}): ${pop ? pop.toLocaleString() : 'No data'}`;
+                    }
                     
                     popup = new mapboxgl.Popup({
                         closeButton: false,
                         closeOnClick: false
                     })
                     .setLngLat(e.lngLat)
-                    .setHTML(`
-                        <strong>${countyName}</strong><br/>
-                        FIPS: ${fips}<br/>
-                        Population: ${pop ? pop.toLocaleString() : 'No data'}
-                    `)
+                    .setHTML(popupHTML)
                     .addTo(map);
                 }
             })
