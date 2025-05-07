@@ -414,9 +414,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const countyStats = document.getElementById('county-stats');
         const countyChart = document.getElementById('county-chart');
 
-        closeInfoBtn.addEventListener('click', () => {
-            infoSidebar.classList.remove('visible');
-        })
+        if (window.countyMap) {
+            window.countyMap.off('click', 'counties-fill')
+        }
+
+        if (!closeInfoBtn._hasClickListener) {
+            closeInfoBtn.addEventListener('click', () => {
+                infoSidebar.classList.remove('visible');
+            })
+            closeInfoBtn._hasClickListener = true
+        }
+
+        
 
         const rows=data.slice(1).map(row=>{
             if (isLanguageData) {
@@ -598,37 +607,55 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Set title
                 countyTitle.textContent = countyName;
+
+                //loading state
+                countyStats.innerHTML = '<p>Loading county details...</p>';
+                countyChart.innerHTML = '<div class="loading-spinner"></div>';
+
+                // Display sidebar
+                infoSidebar.classList.add('visible');
                 
                 // Show county details in sidebar
                 await showCountyDetails(fips, countyName, stateFips, countyFips);
                 
-                // Display sidebar
-                infoSidebar.classList.add('visible');
             }
         });
 
         // Function to fetch and display detailed county information
         async function showCountyDetails(fips, countyName, stateFips, countyFips) {
             try {
-                // Show loading state
-                countyStats.innerHTML = '<p>Loading county details...</p>';
-                countyChart.innerHTML = '';
+                console.log(`Fetching details for ${countyName} (${fips}) for dataset: ${state.selectedDataset}, year: ${state.currentYear}`);
                 
                 // Fetch additional data based on dataset type
                 let demographicData;
                 
                 if (isLanguageData) {
                     // Fetch all language categories for this county
-                    const langResponse = await fetch(`https://api.census.gov/data/2013/language?get=EST,LANLABEL,NAME&for=county:${countyFips}&in=state:${stateFips}`);
+                    const langURL = `https://api.census.gov/data/2013/language?get=EST,LANLABEL,NAME&for=county:${countyFips}&in=state:${stateFips}`;
+                    console.log("Fetching language data from:", langURL);
+                    const langResponse = await fetch(langURL);
+                    
+                    if (!langResponse.ok) {
+                        throw new Error(`API error: ${langResponse.status} ${langResponse.statusText}`);
+                    }
+                    
                     demographicData = await langResponse.json();
                 } else {
-                    // Fetch all race categories for this county
-                    const raceResponse = await fetch(`https://api.census.gov/data/${state.currentYear}/pep/charagegroups?get=NAME,POP&for=county:${countyFips}&in=state:${stateFips}`);
-                    const raceData = await raceResponse.json();
-                    
                     // Fetch detailed race/ethnicity breakdown
-                    const detailResponse = await fetch(`https://api.census.gov/data/${state.currentYear}/pep/charagegroups?get=NAME,POP,RACE,HISP&for=county:${countyFips}&in=state:${stateFips}`);
+                    const detailURL = `https://api.census.gov/data/${state.currentYear}/pep/charagegroups?get=NAME,POP,RACE,HISP&for=county:${countyFips}&in=state:${stateFips}`;
+                    console.log("Fetching race/ethnicity data from:", detailURL);
+                    const detailResponse = await fetch(detailURL);
+                    
+                    if (!detailResponse.ok) {
+                        throw new Error(`API error: ${detailResponse.status} ${detailResponse.statusText}`);
+                    }
+                    
                     demographicData = await detailResponse.json();
+                }
+                
+                // Check if data is valid and has rows
+                if (!demographicData || !Array.isArray(demographicData) || demographicData.length < 2) {
+                    throw new Error('Invalid or empty response from Census API');
                 }
                 
                 // Process and display data
@@ -636,7 +663,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 renderCountyChart(demographicData);
             } catch (error) {
                 console.error('Error fetching county details:', error);
-                countyStats.innerHTML = '<p>Error loading county details. Please try again later.</p>';
+                countyStats.innerHTML = `
+                    <p>Error loading county details: ${error.message}</p>
+                    <p>This may be because the Census API doesn't have detailed data for this county in the selected year.</p>
+                    <button id="retry-county-details" class="btn">Retry</button>
+                `;
+                
+                document.getElementById('retry-county-details')?.addEventListener('click', () => {
+                    showCountyDetails(fips, countyName, stateFips, countyFips);
+                });
+                
+                countyChart.innerHTML = '';
             }
         }
         
@@ -828,6 +865,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const map = window.countyMap;
         
         if (!map) return;
+
+        const infoSidebar = document.getElementById('info-sidebar');
+        const countyTitle = document.getElementById('county-title');
+        const countyStats = document.getElementById('county-stats');
+        const countyChart = document.getElementById('county-chart');
+
+        map.off('click', 'counties-fill')
         
         // Process the data
         const rows = data.slice(1).map(row => {
@@ -889,6 +933,81 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log(`Updated county map with ${rows.length} data points. Min pop: ${minPop}, Max pop: ${maxPop}`);
         }
+
+        map.on('click', 'counties-fill', async (e) => {
+            if (e.features.length > 0) {
+                const feature = e.features[0];
+                const fips = feature.properties.FIPS;
+                const countyName = feature.properties.NAME;
+                const stateFips = fips.substring(0, 2);
+                const countyFips = fips.substring(2);
+                
+                // Set title
+                countyTitle.textContent = countyName;
+                
+                // Show loading state immediately
+                countyStats.innerHTML = '<p>Loading county details...</p>';
+                countyChart.innerHTML = '<div class="loading-spinner"></div>';
+                
+                // Display sidebar immediately
+                infoSidebar.classList.add('visible');
+                
+                // Define showCountyDetails here for the updated map
+                async function showCountyDetails(fips, countyName, stateFips, countyFips) {
+                    try {
+                        console.log(`Fetching details for ${countyName} (${fips}) for dataset: ${state.selectedDataset}, year: ${state.currentYear}`);
+                        
+                        let demographicData;
+                        
+                        if (isLanguageData) {
+                            const langURL = `https://api.census.gov/data/2013/language?get=EST,LANLABEL,NAME&for=county:${countyFips}&in=state:${stateFips}`;
+                            console.log("Fetching language data from:", langURL);
+                            const langResponse = await fetch(langURL);
+                            
+                            if (!langResponse.ok) {
+                                throw new Error(`API error: ${langResponse.status} ${langResponse.statusText}`);
+                            }
+                            
+                            demographicData = await langResponse.json();
+                        } else {
+                            const detailURL = `https://api.census.gov/data/${state.currentYear}/pep/charagegroups?get=NAME,POP,RACE,HISP&for=county:${countyFips}&in=state:${stateFips}`;
+                            console.log("Fetching race/ethnicity data from:", detailURL);
+                            const detailResponse = await fetch(detailURL);
+                            
+                            if (!detailResponse.ok) {
+                                throw new Error(`API error: ${detailResponse.status} ${detailResponse.statusText}`);
+                            }
+                            
+                            demographicData = await detailResponse.json();
+                        }
+                        
+                        // Check if data is valid
+                        if (!demographicData || !Array.isArray(demographicData) || demographicData.length < 2) {
+                            throw new Error('Invalid or empty response from Census API');
+                        }
+                        
+                        renderCountyStats(demographicData, fips, countyName);
+                        renderCountyChart(demographicData);
+                    } catch (error) {
+                        console.error('Error fetching county details:', error);
+                        countyStats.innerHTML = `
+                            <p>Error loading county details: ${error.message}</p>
+                            <p>This may be because the Census API doesn't have detailed data for this county in the selected year.</p>
+                            <button id="retry-county-details" class="btn">Retry</button>
+                        `;
+                        
+                        document.getElementById('retry-county-details')?.addEventListener('click', () => {
+                            showCountyDetails(fips, countyName, stateFips, countyFips);
+                        });
+                        
+                        countyChart.innerHTML = '';
+                    }
+                }
+                
+                // Then load the details
+                await showCountyDetails(fips, countyName, stateFips, countyFips);
+            }
+        });
     }
 
     function renderStateMap(json){
