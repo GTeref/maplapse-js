@@ -1,4 +1,3 @@
-import { set } from "mongoose";
 import { setCache, getCache, initDB } from "./db"; 
 
 document.addEventListener('DOMContentLoaded', async function() {
