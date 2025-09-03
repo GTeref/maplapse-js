@@ -1,4 +1,17 @@
-document.addEventListener('DOMContentLoaded', function() {
+import { set } from "mongoose";
+import { setCache, getCache, initDB } from "./db"; 
+
+document.addEventListener('DOMContentLoaded', async function() {
+
+    // initialize DB on app start
+    try {
+        await initDB();
+        console.log('IndexedDB initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize IndexedDB:', error);
+    }
+
+
     lucide.createIcons();
 
     const sidebar = document.getElementById('sidebar')
@@ -24,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const mapPlaceholder = document.getElementById('map-placeholder')
 
-    const MAPBOX_TOKEN='pk.eyJ1IjoiZ3RlcmVmIiwiYSI6ImNsdmU0Zmk3dzA1d3cycHA2b2R2MnZlengifQ.-P6AWaRKH710if95HmVTEA' // we should hide this lol
+    const MAPBOX_TOKEN='pk.eyJ1IjoiZ3RlcmVmIiwiYSI6ImNsdmU0Zmk3dzA1d3cycHA2b2R2MnZlengifQ.-P6AWaRKH710if95HmVTEA' // mapbox public token w/ max 50k free map loads
 
     let state={
         sidebarOpen: true,
@@ -319,23 +332,43 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const cacheKey=`${state.geographyLevel}_${state.selectedDataset}_${state.currentYear}_${state.selectedRace}_${state.selectedHispanic}_${state.selectedLanguage}`
 
-        if (state.cache[cacheKey]){
+        //use indexedDB cache
+        const cachedData=await getCache(cacheKey)
+        if (cachedData){
             console.log('using cached data for', cacheKey)
-            const cachedData=state.cache[cacheKey]
 
             if (isCountyLevel){
                 if (window.countyMap && window.countyGeojson) {
-                    updateCountyMap(cachedData, window.countyGeojson);
+                    updateCountyMap(cachedData.data, window.countyGeojson);
                 } else {
                     const geojson = await fetchGeoJSON();
                     window.countyGeojson = geojson; //cache the geojson
-                    await renderCountyMap(cachedData, geojson);
+                    await renderCountyMap(cachedData.data, geojson);
                 }
             }else{
                 renderStateMap(cachedData)
             }
+
             return
         }
+
+        // if (state.cache[cacheKey]){
+        //     console.log('using cached data for', cacheKey)
+        //     const cachedData=state.cache[cacheKey]
+
+        //     if (isCountyLevel){
+        //         if (window.countyMap && window.countyGeojson) {
+        //             updateCountyMap(cachedData, window.countyGeojson);
+        //         } else {
+        //             const geojson = await fetchGeoJSON();
+        //             window.countyGeojson = geojson; //cache the geojson
+        //             await renderCountyMap(cachedData, geojson);
+        //         }
+        //     }else{
+        //         renderStateMap(cachedData)
+        //     }
+        //     return
+        // }
 
         // fetch data from the dropdown menus to feed into url
         const hispParam = state.selectedDataset === 'race-ethnicity' ? `&HISP=${state.selectedHispanic}` : '';
@@ -357,7 +390,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("Fetching from:", requestURL)
         const json = await response.json();
 
-        state.cache[cacheKey]=json
+        //state.cache[cacheKey]=json
+        await setCache(cacheKey, json)
 
         if (isCountyLevel){
             if (!window.countyGeojson) {
@@ -383,8 +417,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Create cache key for the year
         const cacheKey = `${state.geographyLevel}_${state.selectedDataset}_${year}_${state.selectedRace}_${state.selectedHispanic}_${state.selectedLanguage}`;
         
+        const persistentData=await getCache(cacheKey)
         // Skip if already cached
-        if (state.cache[cacheKey]) return;
+        //if (state.cache[cacheKey]) return;
+        if (persistentData) return;
         
         const isCountyLevel = state.geographyLevel === 'county';
         const hispParam = state.selectedDataset === 'race-ethnicity' ? `&HISP=${state.selectedHispanic}` : '';
@@ -399,7 +435,8 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const response = await fetch(requestURL);
             const json = await response.json();
-            state.cache[cacheKey] = json;
+            // state.cache[cacheKey] = json;
+            await setCache(cacheKey, json);
             console.log(`Pre-fetched data for ${year}`);
         } catch (error) {
             console.error(`Failed to pre-fetch data for ${year}:`, error);
