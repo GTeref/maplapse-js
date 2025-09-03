@@ -1,5 +1,5 @@
 // db.js imports
-import { setCache, getCache, initDB } from "./db"; 
+import { setCache, getCache, initDB } from "./db.mjs"; 
 
 document.addEventListener('DOMContentLoaded', async function() {
 
@@ -339,11 +339,11 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             if (isCountyLevel){
                 if (window.countyMap && window.countyGeojson) {
-                    updateCountyMap(cachedData.data, window.countyGeojson);
+                    updateCountyMap(cachedData, window.countyGeojson);
                 } else {
                     const geojson = await fetchGeoJSON();
                     window.countyGeojson = geojson; //cache the geojson
-                    await renderCountyMap(cachedData.data, geojson);
+                    await renderCountyMap(cachedData, geojson);
                 }
             }else{
                 renderStateMap(cachedData)
