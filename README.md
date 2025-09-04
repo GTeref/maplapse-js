@@ -3,4 +3,8 @@
 
 A web app to display datasets from various sources.
 
-Uses Plotly to render maps, with Mapbox support coming soon.
+## Supported Datasets:
+- US Census API
+
+## Libraries used:
+- MapLibre
