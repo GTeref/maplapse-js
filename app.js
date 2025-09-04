@@ -39,6 +39,16 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const MAPBOX_TOKEN='pk.eyJ1IjoiZ3RlcmVmIiwiYSI6ImNsdmU0Zmk3dzA1d3cycHA2b2R2MnZlengifQ.-P6AWaRKH710if95HmVTEA' // mapbox public token w/ max 50k free map loads
 
+    //reset all selections on page refresh
+    regionSelect.value = '';
+    geographySelect.value = '';
+    datasetSelect.value = '';
+    raceSelect.value = '1';
+    hispSelect.value = '0';
+    langSelect.value = '2';
+
+    // resetSelections()
+
     let state={
         sidebarOpen: true,
         region: '',
