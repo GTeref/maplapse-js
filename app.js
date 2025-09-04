@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const mapPlaceholder = document.getElementById('map-placeholder')
 
-    const MAPBOX_TOKEN='pk.eyJ1IjoiZ3RlcmVmIiwiYSI6ImNsdmU0Zmk3dzA1d3cycHA2b2R2MnZlengifQ.-P6AWaRKH710if95HmVTEA' // mapbox public token w/ max 50k free map loads
+    // const MAPBOX_TOKEN='pk.eyJ1IjoiZ3RlcmVmIiwiYSI6ImNsdmU0Zmk3dzA1d3cycHA2b2R2MnZlengifQ.-P6AWaRKH710if95HmVTEA' // mapbox public token w/ max 50k free map loads
 
     //reset all selections on page refresh
     regionSelect.value = '';
@@ -131,6 +131,33 @@ document.addEventListener('DOMContentLoaded', async function() {
         '6': 'Asian and Pacific Island Languages',
         '7': 'All Other Languages'
     };
+
+    const mapStyles = {
+        // Protomaps
+        // light: 'https://protomaps.github.io/basemaps-assets/styles/v2/light.json',
+        // dark: 'https://protomaps.github.io/basemaps-assets/styles/v2/dark.json',
+        
+        // MapLibre demo
+        demo: 'https://demotiles.maplibre.org/style.json',
+        
+        // OSM
+        osm: {
+            "version": 8,
+            "sources": {
+                "osm": {
+                    "type": "raster",
+                    "tiles": ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+                    "tileSize": 256,
+                    "attribution": "© OpenStreetMap contributors"
+                }
+            },
+            "layers": [{
+                "id": "osm",
+                "type": "raster",
+                "source": "osm"
+            }]
+        }
+    }
 
     function toggleSidebar() {
         state.sidebarOpen = !state.sidebarOpen
@@ -505,12 +532,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             window.countyMap.remove()
         }
 
-        const map=new mapboxgl.Map({
+        const map=new maplibregl.Map({
             container: 'map',
-            style: 'mapbox://styles/mapbox/light-v10',
+            // style: 'mapbox://styles/mapbox/light-v10',
+            style: mapStyles.osm,
             center: [-98.5795, 39.8283],
             zoom: 3,
-            accessToken: MAPBOX_TOKEN
+            // accessToken: MAPBOX_TOKEN
         })
 
         window.countyMap = map
@@ -625,7 +653,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                         popupHTML += `${raceLabel} (${hispLabel}): ${pop ? pop.toLocaleString() : 'No data'}`;
                     }
                     
-                    popup = new mapboxgl.Popup({
+                    popup = new maplibregl.Popup({
                         closeButton: false,
                         closeOnClick: false
                     })
