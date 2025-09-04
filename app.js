@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const sidebar = document.getElementById('sidebar')
     const menuButton = document.getElementById('menu-button')
+    const settingsButton = document.getElementById('settings-button')
+    const settingsDropdown = document.getElementById('settings-dropdown')
+    const mapStyleSelect = document.getElementById('map-style-select')
     const sidebarToggle = document.getElementById('sidebar-toggle')
     const sidebarToggleIcon = document.getElementById('sidebar-toggle-icon')
     const timeSlider = document.getElementById('time-slider')
@@ -59,6 +62,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         selectedRace: '1',
         selectedHispanic: '0',
         selectedLanguage: '2',
+        mapStyle: 'osm',
         cache:{} //store data for diff years
     }
 
@@ -91,6 +95,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     hispSelect.disabled = true;
 
     menuButton.addEventListener('click', toggleSidebar)
+    settingsButton.addEventListener('click', toggleSettings)
+    mapStyleSelect.addEventListener('change', handleMapStyleChange)
     sidebarToggle.addEventListener('click', toggleSidebar)
     timeSlider.addEventListener('input', handleTimeChange)
 
@@ -105,6 +111,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     raceSelect.addEventListener('change', handleRaceChange)
     hispSelect.addEventListener('change', handleHispanicChange)
     langSelect.addEventListener('change', handleLangChange)
+
+    document.addEventListener('click', function(e) {
+        if (!settingsButton.contains(e.target) && !settingsDropdown.contains(e.target)) {
+            if (state.settingsOpen) {
+                toggleSettings()
+            }
+        }
+    })
 
     //toggleRaceOptions()
 
@@ -156,6 +170,50 @@ document.addEventListener('DOMContentLoaded', async function() {
                 "type": "raster",
                 "source": "osm"
             }]
+        },
+
+        // Carto light
+        light: {
+            "version": 8,
+            "sources": {
+                "carto-light": {
+                    "type": "raster",
+                    "tiles": [
+                        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+                        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+                        "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
+                    ],
+                    "tileSize": 256,
+                    "attribution": "© CARTO, © OpenStreetMap contributors"
+                }
+            },
+            "layers": [{
+                "id": "carto-light",
+                "type": "raster",
+                "source": "carto-light"
+            }]
+        },
+        
+        // Carto dark
+        dark: {
+            "version": 8,
+            "sources": {
+                "carto-dark": {
+                    "type": "raster",
+                    "tiles": [
+                        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+                        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+                        "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
+                    ],
+                    "tileSize": 256,
+                    "attribution": "© CARTO, © OpenStreetMap contributors"
+                }
+            },
+            "layers": [{
+                "id": "carto-dark",
+                "type": "raster",
+                "source": "carto-dark"
+            }]
         }
     }
 
@@ -164,6 +222,23 @@ document.addEventListener('DOMContentLoaded', async function() {
         sidebar.classList.toggle('closed', !state.sidebarOpen)
         sidebarToggleIcon.setAttribute('icon-name', state.sidebarOpen ? 'chevron-left' : 'chevron-right')
         lucide.createIcons()
+    }
+
+    function toggleSettings() {
+        state.settingsOpen = !state.settingsOpen
+        settingsDropdown.classList.toggle('visible', state.settingsOpen)
+    }
+
+    function handleMapStyleChange(e) {
+        const newStyle = e.target.value
+        state.mapStyle = newStyle
+        
+        // Update the county map if it exists
+        if (window.countyMap && state.geographyLevel === 'county') {
+            updateMapStyle(window.countyMap, newStyle)
+        }
+        
+        console.log(`Map style changed to: ${newStyle}`)
     }
 
     function showElement(element,show=true){
@@ -695,154 +770,107 @@ document.addEventListener('DOMContentLoaded', async function() {
                 
             }
         });
+    }
 
-        // Function to fetch and display detailed county information
-        async function showCountyDetails(fips, countyName, stateFips, countyFips) {
-            try {
-                console.log(`Fetching details for ${countyName} (${fips}) for dataset: ${state.selectedDataset}, year: ${state.currentYear}`);
-                
-                // Fetch additional data based on dataset type
-                let demographicData;
-                
-                if (isLanguageData) {
-                    // Fetch all language categories for this county
-                    const langURL = `https://api.census.gov/data/2013/language?get=EST,LANLABEL,NAME&for=county:${countyFips}&in=state:${stateFips}`;
-                    console.log("Fetching language data from:", langURL);
-                    const langResponse = await fetch(langURL);
-                    
-                    if (!langResponse.ok) {
-                        throw new Error(`API error: ${langResponse.status} ${langResponse.statusText}`);
-                    }
-                    
-                    demographicData = await langResponse.json();
-                } else {
-                    // Fetch detailed race/ethnicity breakdown
-                    const detailURL = `https://api.census.gov/data/${state.currentYear}/pep/charagegroups?get=NAME,POP,RACE,HISP&for=county:${countyFips}&in=state:${stateFips}`;
-                    console.log("Fetching race/ethnicity data from:", detailURL);
-                    const detailResponse = await fetch(detailURL);
-                    
-                    if (!detailResponse.ok) {
-                        throw new Error(`API error: ${detailResponse.status} ${detailResponse.statusText}`);
-                    }
-                    
-                    demographicData = await detailResponse.json();
-                }
-                
-                // Check if data is valid and has rows
-                if (!demographicData || !Array.isArray(demographicData) || demographicData.length < 2) {
-                    throw new Error('Invalid or empty response from Census API');
-                }
-                
-                // Process and display data
-                renderCountyStats(demographicData, fips, countyName);
-                renderCountyChart(demographicData);
-            } catch (error) {
-                console.error('Error fetching county details:', error);
-                countyStats.innerHTML = `
-                    <p>Error loading county details: ${error.message}</p>
-                    <p>This may be because the Census API doesn't have detailed data for this county in the selected year.</p>
-                    <button id="retry-county-details" class="btn">Retry</button>
-                `;
-                
-                document.getElementById('retry-county-details')?.addEventListener('click', () => {
-                    showCountyDetails(fips, countyName, stateFips, countyFips);
-                });
-                
-                countyChart.innerHTML = '';
-            }
-        }
-        
-        // Render county statistics
-        function renderCountyStats(data, fips, countyName) {
-            // Skip header row
-            const details = data.slice(1);
+    // Function to fetch and display detailed county information
+    async function showCountyDetails(fips, countyName, stateFips, countyFips) {
+        try {
+            console.log(`Fetching details for ${countyName} (${fips}) for dataset: ${state.selectedDataset}, year: ${state.currentYear}`);
+
+            const countyStats = document.getElementById('county-stats');
+            const countyChart = document.getElementById('county-chart');
+            const isLanguageData = state.selectedDataset === 'language-proficiency';
             
-            let totalPop = 0;
-            const categories = {};
+            // Fetch additional data based on dataset type
+            let demographicData;
             
             if (isLanguageData) {
-                // Process language data
-                details.forEach(row => {
-                    const population = Number(row[0]);
-                    const label = row[1];
-                    const lanCode = row[3]; // LAN7 code
-                    
-                    if (lanCode === "1") { // Total population 5+ years
-                        totalPop = population;
-                    }
-                    
-                    categories[label] = population;
-                });
+                // Fetch all language categories for this county
+                const langURL = `https://api.census.gov/data/2013/language?get=EST,LANLABEL,NAME&for=county:${countyFips}&in=state:${stateFips}`;
+                console.log("Fetching language data from:", langURL);
+                const langResponse = await fetch(langURL);
                 
-                // Build HTML for stats
-                let statsHTML = `
-                    <div class="stat-item">
-                        <span class="stat-label">FIPS Code:</span>
-                        <span>${fips}</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Total Population (5+ years):</span>
-                        <span>${totalPop.toLocaleString()}</span>
-                    </div>
-                    <h4>Language Proficiency</h4>
-                `;
-                
-                // Add each language category
-                for (const [label, pop] of Object.entries(categories)) {
-                    if (label !== "Population 5 years and over") {
-                        const percentage = totalPop > 0 ? ((pop / totalPop) * 100).toFixed(1) : 0;
-                        statsHTML += `
-                            <div class="stat-item">
-                                <span class="stat-label">${label}:</span>
-                                <span>${pop.toLocaleString()} (${percentage}%)</span>
-                            </div>
-                        `;
-                    }
+                if (!langResponse.ok) {
+                    throw new Error(`API error: ${langResponse.status} ${langResponse.statusText}`);
                 }
                 
-                countyStats.innerHTML = statsHTML;
+                demographicData = await langResponse.json();
             } else {
-                // Process race/ethnicity data
-                let totalPop = 0;
-                const raceEthnicityData = {};
+                // Fetch detailed race/ethnicity breakdown
+                const detailURL = `https://api.census.gov/data/${state.currentYear}/pep/charagegroups?get=NAME,POP,RACE,HISP&for=county:${countyFips}&in=state:${stateFips}`;
+                console.log("Fetching race/ethnicity data from:", detailURL);
+                const detailResponse = await fetch(detailURL);
                 
-                // First pass to get total population
-                details.forEach(row => {
-                    if (row[2] === "0" && row[3] === "0") { // Total population
-                        totalPop = Number(row[1]);
-                    }
-                });
+                if (!detailResponse.ok) {
+                    throw new Error(`API error: ${detailResponse.status} ${detailResponse.statusText}`);
+                }
                 
-                // Second pass to calculate percentages
-                details.forEach(row => {
-                    const population = Number(row[1]);
-                    const raceCode = row[2];
-                    const hispCode = row[3];
-                    
-                    if (raceCode !== "0" || hispCode !== "0") { // Skip total row
-                        const raceLabel = raceLabels[raceCode] || 'Unknown';
-                        const hispLabel = hispanicLabels[hispCode] || 'Unknown';
-                        const label = `${raceLabel} (${hispLabel})`;
-                        
-                        raceEthnicityData[label] = population;
-                    }
-                });
+                demographicData = await detailResponse.json();
+            }
+            
+            // Check if data is valid and has rows
+            if (!demographicData || !Array.isArray(demographicData) || demographicData.length < 2) {
+                throw new Error('Invalid or empty response from Census API');
+            }
+            
+            // Process and display data
+            renderCountyStats(demographicData, fips, countyName, isLanguageData);
+            renderCountyChart(demographicData, isLanguageData);
+        } catch (error) {
+            console.error('Error fetching county details:', error);
+            countyStats.innerHTML = `
+                <p>Error loading county details: ${error.message}</p>
+                <p>This may be because the Census API doesn't have detailed data for this county in the selected year.</p>
+                <button id="retry-county-details" class="btn">Retry</button>
+            `;
+            
+            document.getElementById('retry-county-details')?.addEventListener('click', () => {
+                showCountyDetails(fips, countyName, stateFips, countyFips);
+            });
+            
+            countyChart.innerHTML = '';
+        }
+    }
+    
+    // Render county statistics
+    function renderCountyStats(data, fips, countyName, isLanguageData) {
+        const countyStats = document.getElementById('county-stats');
+        // Skip header row
+        const details = data.slice(1);
+        
+        let totalPop = 0;
+        const categories = {};
+        
+        if (isLanguageData) {
+            // Process language data
+            details.forEach(row => {
+                const population = Number(row[0]);
+                const label = row[1];
+                const lanCode = row[3]; // LAN7 code
                 
-                // Build HTML for stats
-                let statsHTML = `
-                    <div class="stat-item">
-                        <span class="stat-label">FIPS Code:</span>
-                        <span>${fips}</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Total Population:</span>
-                        <span>${totalPop.toLocaleString()}</span>
-                    </div>
-                    <h4>Race & Ethnicity Breakdown</h4>
-                `;
+                if (lanCode === "1") { // Total population 5+ years
+                    totalPop = population;
+                }
                 
-                // Add each race/ethnicity category
-                for (const [label, pop] of Object.entries(raceEthnicityData)) {
+                categories[label] = population;
+            });
+            
+            // Build HTML for stats
+            let statsHTML = `
+                <div class="stat-item">
+                    <span class="stat-label">FIPS Code:</span>
+                    <span>${fips}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Total Population (5+ years):</span>
+                    <span>${totalPop.toLocaleString()}</span>
+                </div>
+                <h4>Language Proficiency</h4>
+            `;
+            
+            // Add each language category
+            for (const [label, pop] of Object.entries(categories)) {
+                if (label !== "Population 5 years and over") {
                     const percentage = totalPop > 0 ? ((pop / totalPop) * 100).toFixed(1) : 0;
                     statsHTML += `
                         <div class="stat-item">
@@ -851,87 +879,139 @@ document.addEventListener('DOMContentLoaded', async function() {
                         </div>
                     `;
                 }
-                
-                countyStats.innerHTML = statsHTML;
             }
+            
+            countyStats.innerHTML = statsHTML;
+        } else {
+            // Process race/ethnicity data
+            let totalPop = 0;
+            const raceEthnicityData = {};
+            
+            // First pass to get total population
+            details.forEach(row => {
+                if (row[2] === "0" && row[3] === "0") { // Total population
+                    totalPop = Number(row[1]);
+                }
+            });
+            
+            // Second pass to calculate percentages
+            details.forEach(row => {
+                const population = Number(row[1]);
+                const raceCode = row[2];
+                const hispCode = row[3];
+                
+                if (raceCode !== "0" || hispCode !== "0") { // Skip total row
+                    const raceLabel = raceLabels[raceCode] || 'Unknown';
+                    const hispLabel = hispanicLabels[hispCode] || 'Unknown';
+                    const label = `${raceLabel} (${hispLabel})`;
+                    
+                    raceEthnicityData[label] = population;
+                }
+            });
+            
+            // Build HTML for stats
+            let statsHTML = `
+                <div class="stat-item">
+                    <span class="stat-label">FIPS Code:</span>
+                    <span>${fips}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Total Population:</span>
+                    <span>${totalPop.toLocaleString()}</span>
+                </div>
+                <h4>Race & Ethnicity Breakdown</h4>
+            `;
+            
+            // Add each race/ethnicity category
+            for (const [label, pop] of Object.entries(raceEthnicityData)) {
+                const percentage = totalPop > 0 ? ((pop / totalPop) * 100).toFixed(1) : 0;
+                statsHTML += `
+                    <div class="stat-item">
+                        <span class="stat-label">${label}:</span>
+                        <span>${pop.toLocaleString()} (${percentage}%)</span>
+                    </div>
+                `;
+            }
+            
+            countyStats.innerHTML = statsHTML;
+        }
+    }
+    
+    // Render chart for county data
+    function renderCountyChart(data, isLanguageData) {
+        // Skip header row
+        const details = data.slice(1);
+        
+        let chartData;
+        
+        if (isLanguageData) {
+            // Process language data for chart
+            const categories = [];
+            const values = [];
+            const colors = ['rgb(31, 119, 180)', 'rgb(255, 127, 14)', 'rgb(44, 160, 44)', 
+                        'rgb(214, 39, 40)', 'rgb(148, 103, 189)', 'rgb(140, 86, 75)'];
+            
+            details.forEach((row, index) => {
+                const label = row[1];
+                const value = Number(row[0]);
+                
+                if (label !== "Population 5 years and over" && value > 0) {
+                    categories.push(label);
+                    values.push(value);
+                }
+            });
+            
+            chartData = [{
+                values: values,
+                labels: categories,
+                type: 'pie',
+                marker: {
+                    colors: colors.slice(0, categories.length)
+                },
+                textinfo: 'percent',
+                hoverinfo: 'label+value+percent'
+            }];
+        } else {
+            // Process race/ethnicity data for chart
+            const categories = [];
+            const values = [];
+            const colors = ['rgb(103, 0, 13)', 'rgb(165, 15, 21)', 'rgb(203, 24, 29)', 
+                        'rgb(239, 59, 44)', 'rgb(251, 106, 74)', 'rgb(252, 146, 114)'];
+            
+            details.forEach(row => {
+                const population = Number(row[1]);
+                const raceCode = row[2];
+                const hispCode = row[3];
+                
+                if ((raceCode !== "0" || hispCode !== "0") && population > 0) {
+                    const raceLabel = raceLabels[raceCode] || 'Unknown';
+                    const hispLabel = hispanicLabels[hispCode] || 'Unknown';
+                    const label = `${raceLabel} (${hispLabel})`;
+                    
+                    categories.push(label);
+                    values.push(population);
+                }
+            });
+            
+            chartData = [{
+                values: values,
+                labels: categories,
+                type: 'pie',
+                marker: {
+                    colors: colors.slice(0, categories.length)
+                },
+                textinfo: 'percent',
+                hoverinfo: 'label+value+percent'
+            }];
         }
         
-        // Render chart for county data
-        function renderCountyChart(data) {
-            // Skip header row
-            const details = data.slice(1);
-            
-            let chartData;
-            
-            if (isLanguageData) {
-                // Process language data for chart
-                const categories = [];
-                const values = [];
-                const colors = ['rgb(31, 119, 180)', 'rgb(255, 127, 14)', 'rgb(44, 160, 44)', 
-                            'rgb(214, 39, 40)', 'rgb(148, 103, 189)', 'rgb(140, 86, 75)'];
-                
-                details.forEach((row, index) => {
-                    const label = row[1];
-                    const value = Number(row[0]);
-                    
-                    if (label !== "Population 5 years and over" && value > 0) {
-                        categories.push(label);
-                        values.push(value);
-                    }
-                });
-                
-                chartData = [{
-                    values: values,
-                    labels: categories,
-                    type: 'pie',
-                    marker: {
-                        colors: colors.slice(0, categories.length)
-                    },
-                    textinfo: 'percent',
-                    hoverinfo: 'label+value+percent'
-                }];
-            } else {
-                // Process race/ethnicity data for chart
-                const categories = [];
-                const values = [];
-                const colors = ['rgb(103, 0, 13)', 'rgb(165, 15, 21)', 'rgb(203, 24, 29)', 
-                            'rgb(239, 59, 44)', 'rgb(251, 106, 74)', 'rgb(252, 146, 114)'];
-                
-                details.forEach(row => {
-                    const population = Number(row[1]);
-                    const raceCode = row[2];
-                    const hispCode = row[3];
-                    
-                    if ((raceCode !== "0" || hispCode !== "0") && population > 0) {
-                        const raceLabel = raceLabels[raceCode] || 'Unknown';
-                        const hispLabel = hispanicLabels[hispCode] || 'Unknown';
-                        const label = `${raceLabel} (${hispLabel})`;
-                        
-                        categories.push(label);
-                        values.push(population);
-                    }
-                });
-                
-                chartData = [{
-                    values: values,
-                    labels: categories,
-                    type: 'pie',
-                    marker: {
-                        colors: colors.slice(0, categories.length)
-                    },
-                    textinfo: 'percent',
-                    hoverinfo: 'label+value+percent'
-                }];
-            }
-            
-            const layout = {
-                height: 300,
-                margin: {l: 0, r: 0, b: 30, t: 30},
-                title: isLanguageData ? 'Language Distribution' : 'Race/Ethnicity Distribution'
-            };
-            
-            Plotly.newPlot('county-chart', chartData, layout);
-        }
+        const layout = {
+            height: 300,
+            margin: {l: 0, r: 0, b: 30, t: 30},
+            title: isLanguageData ? 'Language Distribution' : 'Race/Ethnicity Distribution'
+        };
+        
+        Plotly.newPlot('county-chart', chartData, layout);
     }
 
     //update county map w/o re-rendering it
@@ -1027,62 +1107,174 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // Display sidebar immediately
                 infoSidebar.classList.add('visible');
                 
-                // Define showCountyDetails here for the updated map
-                async function showCountyDetails(fips, countyName, stateFips, countyFips) {
-                    try {
-                        console.log(`Fetching details for ${countyName} (${fips}) for dataset: ${state.selectedDataset}, year: ${state.currentYear}`);
-                        
-                        let demographicData;
-                        
-                        if (isLanguageData) {
-                            const langURL = `https://api.census.gov/data/2013/language?get=EST,LANLABEL,NAME&for=county:${countyFips}&in=state:${stateFips}`;
-                            console.log("Fetching language data from:", langURL);
-                            const langResponse = await fetch(langURL);
-                            
-                            if (!langResponse.ok) {
-                                throw new Error(`API error: ${langResponse.status} ${langResponse.statusText}`);
-                            }
-                            
-                            demographicData = await langResponse.json();
-                        } else {
-                            const detailURL = `https://api.census.gov/data/${state.currentYear}/pep/charagegroups?get=NAME,POP,RACE,HISP&for=county:${countyFips}&in=state:${stateFips}`;
-                            console.log("Fetching race/ethnicity data from:", detailURL);
-                            const detailResponse = await fetch(detailURL);
-                            
-                            if (!detailResponse.ok) {
-                                throw new Error(`API error: ${detailResponse.status} ${detailResponse.statusText}`);
-                            }
-                            
-                            demographicData = await detailResponse.json();
-                        }
-                        
-                        // Check if data is valid
-                        if (!demographicData || !Array.isArray(demographicData) || demographicData.length < 2) {
-                            throw new Error('Invalid or empty response from Census API');
-                        }
-                        
-                        renderCountyStats(demographicData, fips, countyName);
-                        renderCountyChart(demographicData);
-                    } catch (error) {
-                        console.error('Error fetching county details:', error);
-                        countyStats.innerHTML = `
-                            <p>Error loading county details: ${error.message}</p>
-                            <p>This may be because the Census API doesn't have detailed data for this county in the selected year.</p>
-                            <button id="retry-county-details" class="btn">Retry</button>
-                        `;
-                        
-                        document.getElementById('retry-county-details')?.addEventListener('click', () => {
-                            showCountyDetails(fips, countyName, stateFips, countyFips);
-                        });
-                        
-                        countyChart.innerHTML = '';
-                    }
-                }
-                
                 // Then load the details
                 await showCountyDetails(fips, countyName, stateFips, countyFips);
             }
         });
+    }
+
+    //update map style while preserving data layers
+    function updateMapStyle(map, styleName) {
+        const style = mapStyles[styleName]
+        if (style && map) {
+            // Store current layers and sources
+            const currentLayers = []
+            const currentSources = {}
+            
+            try {
+                // Get current map layers and sources
+                if (map.getLayer('counties-fill')) {
+                    currentLayers.push({
+                        id: 'counties-fill',
+                        layer: map.getLayer('counties-fill')
+                    })
+                }
+                if (map.getLayer('counties-border')) {
+                    currentLayers.push({
+                        id: 'counties-border',
+                        layer: map.getLayer('counties-border')
+                    })
+                }
+                if (map.getSource('counties')) {
+                    currentSources.counties = map.getSource('counties')._data
+                }
+
+                // Set new style
+                map.setStyle(style)
+
+                // Wait for style to load, then re-add our layers
+                map.once('styledata', () => {
+                    // Re-add counties source if it existed
+                    if (currentSources.counties) {
+                        map.addSource('counties', {
+                            type: 'geojson',
+                            data: currentSources.counties
+                        })
+
+                        // Re-add layers with current data
+                        if (window.currentPopByFips) {
+                            const isLanguageData = state.selectedDataset === 'language-proficiency'
+                            const colorMin = isLanguageData ? 'rgb(240, 247, 255)' : 'rgb(255, 245, 240)'
+                            const colorMax = isLanguageData ? 'rgb(31, 119, 180)' : 'rgb(103, 0, 13)'
+                            const maxPop = window.currentMaxPop
+
+                            map.addLayer({
+                                id: 'counties-fill',
+                                type: 'fill',
+                                source: 'counties',
+                                paint: {
+                                    'fill-color': [
+                                        'let',
+                                        'fips', ['to-string', ['get', 'FIPS']],
+                                        [
+                                            'case',
+                                            ['has', ['var', 'fips'], ['literal', window.currentPopByFips]],
+                                            [
+                                                'interpolate',
+                                                ['linear'],
+                                                ['/',
+                                                    ['ln', ['max', 1, ['to-number', ['get', ['var', 'fips'], ['literal', window.currentPopByFips]]]]],
+                                                    ['ln', ['max', 1, maxPop]]
+                                                ],
+                                                0, colorMin,
+                                                1, colorMax
+                                            ],
+                                            'rgb(200, 200, 200)'
+                                        ]
+                                    ],
+                                    'fill-opacity': 0.7
+                                }
+                            })
+
+                            map.addLayer({
+                                id: 'counties-border',
+                                type: 'line',
+                                source: 'counties',
+                                paint: {
+                                    'line-color': '#000',
+                                    'line-width': 0.5,
+                                    'line-opacity': 0.3
+                                }
+                            })
+
+                            // Re-add event listeners
+                            addCountyMapEventListeners(map)
+                        }
+                    }
+                })
+            } catch (error) {
+                console.error('Error updating map style:', error)
+            }
+        }
+    }
+
+    // Extract event listeners into a separate function for reuse
+    function addCountyMapEventListeners(map) {
+        // Mouse events for hover
+        map.on('mousemove', 'counties-fill', (e) => {
+            map.getCanvas().style.cursor = 'pointer'
+            
+            if (e.features.length > 0) {
+                const feature = e.features[0]
+                const fips = feature.properties.FIPS
+                const countyName = feature.properties.NAME
+                const pop = window.currentPopByFips[fips]
+                
+                if (window.currentPopup) {
+                    window.currentPopup.remove()
+                }
+
+                let popupHTML = `<strong>${countyName}</strong><br/>FIPS: ${fips}<br/>`
+
+                if (state.selectedDataset === 'language-proficiency') {
+                    const categoryLabel = languageLabels[state.selectedLanguage]
+                    popupHTML += `${categoryLabel}: ${pop ? pop.toLocaleString() : 'No data'}`
+                } else {
+                    const raceLabel = raceLabels[state.selectedRace]
+                    const hispLabel = hispanicLabels[state.selectedHispanic]
+                    popupHTML += `${raceLabel} (${hispLabel}): ${pop ? pop.toLocaleString() : 'No data'}`
+                }
+                
+                window.currentPopup = new maplibregl.Popup({
+                    closeButton: false,
+                    closeOnClick: false
+                })
+                .setLngLat(e.lngLat)
+                .setHTML(popupHTML)
+                .addTo(map)
+            }
+        })
+
+        map.on('mouseleave', 'counties-fill', () => {
+            map.getCanvas().style.cursor = ''
+            if (window.currentPopup) {
+                window.currentPopup.remove()
+                window.currentPopup = null
+            }
+        })
+
+        // Click events for detailed info
+        map.on('click', 'counties-fill', async (e) => {
+            if (e.features.length > 0) {
+                const feature = e.features[0]
+                const fips = feature.properties.FIPS
+                const countyName = feature.properties.NAME
+                const stateFips = fips.substring(0, 2)
+                const countyFips = fips.substring(2)
+                
+                const infoSidebar = document.getElementById('info-sidebar')
+                const countyTitle = document.getElementById('county-title')
+                const countyStats = document.getElementById('county-stats')
+                const countyChart = document.getElementById('county-chart')
+                
+                countyTitle.textContent = countyName
+                countyStats.innerHTML = '<p>Loading county details...</p>'
+                countyChart.innerHTML = '<div class="loading-spinner"></div>'
+                infoSidebar.classList.add('visible')
+                
+                await showCountyDetails(fips, countyName, stateFips, countyFips)
+            }
+        })
     }
 
     function renderStateMap(json){

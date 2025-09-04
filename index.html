@@ -21,9 +21,25 @@
                 </button>
                 <h1 class="header-title">MapLapse</h1>
             </div>
-            <button class="header-settings-button">
-                <i icon-name="settings"></i>
-            </button>
+            <div class="header-right">
+                <button id="settings-button" class="header-settings-button">
+                    <i icon-name="settings"></i>
+                </button>
+                <div id="settings-dropdown" class="settings-dropdown">
+                    <div class="settings-content">
+                        <h3 class="settings-title">Settings</h3>
+                        
+                        <div class="setting-group">
+                            <label for="map-style-select" class="setting-label">Map Style:</label>
+                            <select id="map-style-select" class="setting-select">
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                                <option value="osm">OpenStreetMap</option>
+                                <option value="demo">MapLibre Demo</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
         </header>
 
         <div class="app-body">
