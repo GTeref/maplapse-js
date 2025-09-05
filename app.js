@@ -236,6 +236,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Update the county map if it exists
         if (window.countyMap && state.geographyLevel === 'county') {
             updateMapStyle(window.countyMap, newStyle)
+        } else if (state.geographyLevel === 'state' && window.stateMap) {
+            updateMapStyle(window.stateMap, newStyle)
         }
         
         console.log(`Map style changed to: ${newStyle}`)
@@ -1295,119 +1297,168 @@ document.addEventListener('DOMContentLoaded', async function() {
             window.countyMap.remove();
             window.countyMap = null;
         }
+
+        const isLanguageData = state.selectedDataset === 'language-proficiency';
         const rows = json.slice(1).map(row => {
             if (state.selectedDataset ==='race-ethnicity') {
                 return {
-                    state: row[4],
+                    state: row[4].padStart(2, '0'),
                     NAME: row[0],
-                    POP: row[1],
+                    POP: Number(row[1]),
                     RACE: row[2],
                     HISP: row[3]
                 }
             } else {
                 return {
-                    state: row[4],
+                    state: row[4].padStart(2, '0'),
                     NAME: row[2],
-                    POP: row[0],
+                    POP: Number(row[0]),
                     LANG: row[1]
                 }
             }
             
         });
 
-        function unpack(rows, key) {
-            return rows.map(row => row[key]);
+        const popByState={}
+        rows.forEach(row=> {
+            popByState[row.state]=row.POP
+        })
+
+        const values=Object.values(popByState).filter(val => val > 0) //not sure if filter is acc necessary
+        const minPop=Math.min(...values)    
+        const maxPop=Math.max(...values)
+
+        if (window.stateMap) {
+            window.stateMap.remove()
         }
 
-        // US Census represents states with codes instead of abbreviations (01, 02 instead of AK, AS), so we need to map each code to its state first
-        const codeToState = {
-            "01": "AL", "02": "AK", "04": "AZ", "05": "AR", "06": "CA",
-            "08": "CO", "09": "CT", "10": "DE", "11": "DC", "12": "FL",
-            "13": "GA", "15": "HI", "16": "ID", "17": "IL", "18": "IN",
-            "19": "IA", "20": "KS", "21": "KY", "22": "LA", "23": "ME",
-            "24": "MD", "25": "MA", "26": "MI", "27": "MN", "28": "MS",
-            "29": "MO", "30": "MT", "31": "NE", "32": "NV", "33": "NH",
-            "34": "NJ", "35": "NM", "36": "NY", "37": "NC", "38": "ND",
-            "39": "OH", "40": "OK", "41": "OR", "42": "PA", "44": "RI",
-            "45": "SC", "46": "SD", "47": "TN", "48": "TX", "49": "UT",
-            "50": "VT", "51": "VA", "53": "WA", "54": "WV", "55": "WI",
-            "56": "WY"
-        }
+        const map=new maplibregl.Map({
+            container: 'map',
+            style: mapStyles[state.mapStyle],
+            center: [-98.5795, 39.8283],
+            zoom: 3,
+        })
 
-        console.log("Locations:", unpack(rows, 'state').map(code => codeToState[code.padStart(2, '0')]));
-        console.log("Population (z):", unpack(rows, 'POP').map(Number));
+        window.stateMap = map
 
-        var plotData = [{
-            type: 'choropleth',
-            locationmode: 'USA-states',
-            locations: unpack(rows, 'state').map(code => codeToState[code]),
-            z: unpack(rows, 'POP').map(Number),
-            text: unpack(rows, 'NAME'),
-            colorscale: state.selectedDataset === 'language-proficiency' ? [
-                [0, 'rgb(240, 247, 255)'],  // light blue
-                [1, 'rgb(31, 119, 180)']    // dark blue
-            ] : [
-                [0, 'rgb(255, 245, 240)'],  // light red
-                [1, 'rgb(103, 0, 13)']      // dark red
-            ]
-            //autocolorscale: true
-            // locations: ['CA', 'TX', 'NY'], // Example states
-            // z: [10000000, 20000000, 15000000], // Example population values
-            // text: ['California', 'Texas', 'New York'],
-            // autocolorscale: true
-        }];
+        window.currentStatePopByFips=popByState
+        window.currentStateMinPop=minPop
+        window.currentStateMaxPop=maxPop
 
-        const raceLabels = {
-            '1': 'White',
-            '2': 'Black or African American',
-            '3': 'American Indian and Alaska Native',
-            '4': 'Asian',
-            '5': 'Native Hawaiian and Other Pacific Islander',
-            '6': 'Two or More Races'
-        };
+        console.log(`Total states with data: ${rows.length}`);
+        console.log(`Min state pop: ${minPop}, Max state pop: ${maxPop}`);
 
-        const hispanicLabels = {
-            '0': 'Non-Hispanic',
-            '1': 'Hispanic'
-        };
+        let popup=null
 
-        const languageLabels = {
-            '1': 'Population 5 years and over',
-            '2': 'Speak only English',
-            '3': 'Speak a language other than English at home',
-            '4': 'Spanish and Spanish Creole', // this doesn't work for some reason
-            '5': 'Other Indo-European Languages',
-            '6': 'Asian and Pacific Island Languages',
-            '7': 'All Other Languages'
-        };
+        map.on('load', async()=> {
+            const stateGeojson=await fetchStateGeoJSON()
 
-        let title = state.selectedDataset === 'race-ethnicity' 
-        ? `${state.currentYear} US Population - ${raceLabels[state.selectedRace]} (${hispanicLabels[state.selectedHispanic]})`
-        : `2013 US Population - ${languageLabels[state.selectedLanguage]}`;
+            //add state FIPS to properties for easier access
+            stateGeojson.features.forEach(feature => {
+                if (feature.id) {
+                    feature.properties.FIPS = feature.id.padStart(2, '0');
+                }
+            });
 
-        var layout = {
-            title: title,
-            geo: {
-                scope: 'usa',
-                countrycolor: 'rgb(255, 255, 255)',
-                showland: true,
-                landcolor: 'rgb(217, 217, 217)',
-                showlakes: true,
-                lakecolor: 'rgb(255, 255, 255)',
-                subunitcolor: 'rgb(255, 255, 255)',
-                // lonaxis: {}, 
-                // lataxis: {}
-            }
-            };
+            const colorMin = isLanguageData ? 'rgb(240, 247, 255)' : 'rgb(255, 245, 240)';
+            const colorMax = isLanguageData ? 'rgb(31, 119, 180)' : 'rgb(103, 0, 13)';
 
-        //const mapDiv = DOM.element('div');
-        Plotly.newPlot('map', plotData, layout, {showLink: false});
-        //return mapDiv;
+            map.addSource('states', {
+                type: 'geojson',
+                data: stateGeojson
+            })
+
+            map.addLayer({
+                id: 'states-fill',
+                type: 'fill',
+                source: 'states',
+                paint: {
+                    'fill-color': [
+                        'let',
+                        'stateFips', ['to-string', ['get', 'FIPS']],
+                        [
+                            'case',
+                            ['has', ['var', 'stateFips'], ['literal', popByState]],
+                            [
+                                'interpolate',
+                                ['linear'],
+                                ['/',
+                                    ['ln', ['max', 1, ['to-number', ['get', ['var', 'stateFips'], ['literal', popByState]]]]],
+                                    ['ln', ['max', 1, maxPop]]
+                                ],
+                                0, colorMin,
+                                1, colorMax
+                            ],  
+                            'rgb(200, 200, 200)'
+                        ]
+                    ],
+                    'fill-opacity': 0.7
+                }
+            })
+
+            map.addLayer({
+                id: 'states-border',
+                type: 'line',
+                source: 'states',
+                paint: {
+                    'line-color': '#000',
+                    'line-width': 1,
+                    'line-opacity': 0.5
+                }
+            })
+
+            //render hover popup for states
+            map.on('mousemove', 'states-fill', (e) => {
+                map.getCanvas().style.cursor = 'pointer';
+
+                if (e.features.length > 0) {
+                    const feature = e.features[0];
+                    const stateFips = feature.properties.FIPS;
+                    const stateName = feature.properties.name;
+                    const pop = window.currentStatePopByFips[stateFips];
+                    
+                    if (popup) {
+                        popup.remove();
+                    }
+    
+                    let popupHTML = `<strong>${stateName}</strong><br/>State FIPS: ${stateFips}<br/>`;
+    
+                    if (state.selectedDataset === 'language-proficiency') {
+                        const categoryLabel = languageLabels[state.selectedLanguage];
+                        popupHTML += `${categoryLabel}: ${pop ? pop.toLocaleString() : 'No data'}`;
+                    } else {
+                        const raceLabel = raceLabels[state.selectedRace];
+                        const hispLabel = hispanicLabels[state.selectedHispanic];
+                        popupHTML += `${raceLabel} (${hispLabel}): ${pop ? pop.toLocaleString() : 'No data'}`;
+                    }
+                    
+                    popup = new maplibregl.Popup({
+                        closeButton: false,
+                        closeOnClick: false
+                    })
+                    .setLngLat(e.lngLat)
+                    .setHTML(popupHTML)
+                    .addTo(map);
+                }
+            });
+
+            map.on('mouseleave', 'states-fill', () => {
+                map.getCanvas().style.cursor = '';
+                if (popup) {
+                    popup.remove();
+                    popup = null;
+                }
+            });
+
+            // add click functionality later...
+        })
     }
-
     //fetchAndUpdateMap()
 
-    window.addEventListener('resize', () => { if (state.selectedDataset) { Plotly.Plots.resize('map') } })
+    // window.addEventListener('resize', () => { if (state.selectedDataset) { Plotly.Plots.resize('map') } })
+window.addEventListener('resize', () => { if (state.selectedDataset) { window.countyMap && window.countyMap.resize(); window.stateMap && window.stateMap.resize(); }    
+
+});
 
 });
 
