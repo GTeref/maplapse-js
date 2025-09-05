@@ -412,6 +412,17 @@ document.addEventListener('DOMContentLoaded', async function() {
             mapPlaceholder.textContent='Select a geography level'
         }
     }
+
+    async function fetchStateGeoJSON(){
+        try{
+            const response=await fetch('https://gist.githubusercontent.com/wboykinm/6979292/raw/fe0c968ae6408e63186d09181f8d61299345bbeb/us-states.geojson')
+            if (!response.ok) throw new Error('Failed to fetch state data')
+            return await response.json()
+        }   catch(e){
+            console.error('Error fetching state geojson:',error)
+            throw error
+        }
+    }
     
     async function fetchGeoJSON(){
         try{
@@ -939,6 +950,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Render chart for county data
     function renderCountyChart(data, isLanguageData) {
+
+        const countyChart = document.getElementById('county-chart');
         // Skip header row
         const details = data.slice(1);
         
