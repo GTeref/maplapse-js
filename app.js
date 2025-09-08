@@ -1,5 +1,6 @@
 // db.js imports
-import { setCache, getCache, initDB } from "./db.mjs"; 
+import { setCache, getCache, initDB } from "./util/db.mjs"; 
+import { createLegend, hideLegend, formatLegendNumbers, updateLegendTheme } from "./util/legend.mjs";
 
 document.addEventListener('DOMContentLoaded', async function() {
 
@@ -239,6 +240,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         } else if (state.geographyLevel === 'state' && window.stateMap) {
             updateMapStyle(window.stateMap, newStyle)
         }
+
+        updateLegendTheme(newStyle)
         
         console.log(`Map style changed to: ${newStyle}`)
     }
@@ -399,6 +402,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         resetDatasetSelections()
 
+        hideLegend()
+
         mapPlaceholder.textContent='Select a region to get started'
         mapPlaceholder.style.display='block'
     }
@@ -409,6 +414,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         showElement(datasetGroup,false)
         showElement(datasetOptions,false)
         timeSlider.disabled=true
+
+        hideLegend()
 
         if (state.region && !state.geographyLevel){
             mapPlaceholder.textContent='Select a geography level'
@@ -758,6 +765,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                     popup = null;
                 }
             })
+
+            const labels = { raceLabels, hispanicLabels, languageLabels }
+            createLegend(minPop, maxPop, isLanguageData, 'county', state, labels)
         })
 
         map.on('click', 'counties-fill', async (e) => {
@@ -1450,12 +1460,17 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             });
 
+            const labels = { raceLabels, hispanicLabels, languageLabels }
+            createLegend(minPop, maxPop, isLanguageData, 'state', state, labels)
+
             // add click functionality later...
         })
     }
-    //fetchAndUpdateMap()
+    
 
-    // window.addEventListener('resize', () => { if (state.selectedDataset) { Plotly.Plots.resize('map') } })
+
+
+    
 window.addEventListener('resize', () => { if (state.selectedDataset) { window.countyMap && window.countyMap.resize(); window.stateMap && window.stateMap.resize(); }    
 
 });
