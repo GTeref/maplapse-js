@@ -1,6 +1,6 @@
 // db.js imports
 import { setCache, getCache, initDB } from "./util/db.mjs"; 
-import { createLegend, hideLegend, formatLegendNumbers, updateLegendTheme } from "./util/legend.mjs";
+import { createLegend, hideLegend, formatLegendNumbers, updateLegendTheme, createSteppedColorExpression } from "./util/legend.mjs";
 
 document.addEventListener('DOMContentLoaded', async function() {
 
@@ -478,7 +478,11 @@ document.addEventListener('DOMContentLoaded', async function() {
                     await renderCountyMap(cachedData, geojson);
                 }
             }else{
-                renderStateMap(cachedData)
+                if (window.stateMap) {
+                    updateStateMap(cachedData);
+                } else {
+                    renderStateMap(cachedData);
+                }
             }
 
             return
@@ -536,7 +540,11 @@ document.addEventListener('DOMContentLoaded', async function() {
                 await renderCountyMap(json, window.countyGeojson)
             }
         } else{
-            renderStateMap(json)
+            if (window.stateMap){
+                updateStateMap(json)
+            } else {
+                renderStateMap(json)
+            }
         }
         
     }
@@ -689,25 +697,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 type: 'fill',
                 source: 'counties',
                 paint: {
-                    'fill-color': [
-                        'let',
-                        'fips', ['to-string', ['get', 'FIPS']],
-                        [
-                            'case',
-                            ['has', ['var', 'fips'], ['literal', popByFips]],
-                            [
-                                'interpolate',
-                                ['linear'],
-                                ['/',
-                                    ['ln', ['max', 1, ['to-number', ['get', ['var', 'fips'], ['literal', popByFips]]]]],
-                                    ['ln', ['max', 1, maxPop]]
-                                ],
-                                0, colorMin,
-                                1, colorMax
-                            ],
-                            'rgb(200, 200, 200)' 
-                        ]
-                    ],
+                    'fill-color': createSteppedColorExpression(popByFips,minPop,maxPop,isLanguageData),
                     'fill-opacity': 0.7
                 }
             })
@@ -1091,25 +1081,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             window.currentMinPop = minPop;
             window.currentMaxPop = maxPop;
             
-            map.setPaintProperty('counties-fill', 'fill-color', [
-                'let',
-                'fips', ['to-string', ['get', 'FIPS']],
-                [
-                    'case',
-                    ['has', ['var', 'fips'], ['literal', popByFips]],
-                    [
-                        'interpolate',
-                        ['linear'],
-                        ['/',
-                            ['ln', ['max', 1, ['to-number', ['get', ['var', 'fips'], ['literal', popByFips]]]]],
-                            ['ln', ['max', 1, maxPop]]
-                        ],
-                        0, colorMin,
-                        1, colorMax
-                    ],
-                    'rgb(200, 200, 200)'
-                ]
-            ]);
+            map.setPaintProperty('counties-fill', 'fill-color', createSteppedColorExpression(popByFips,minPop,maxPop,isLanguageData));
+
+            const labels = { raceLabels, hispanicLabels, languageLabels }
+            createLegend(minPop, maxPop, isLanguageData, 'county', state, labels)
             
             console.log(`Updated county map with ${rows.length} data points. Min pop: ${minPop}, Max pop: ${maxPop}`);
         }
@@ -1383,25 +1358,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 type: 'fill',
                 source: 'states',
                 paint: {
-                    'fill-color': [
-                        'let',
-                        'stateFips', ['to-string', ['get', 'FIPS']],
-                        [
-                            'case',
-                            ['has', ['var', 'stateFips'], ['literal', popByState]],
-                            [
-                                'interpolate',
-                                ['linear'],
-                                ['/',
-                                    ['ln', ['max', 1, ['to-number', ['get', ['var', 'stateFips'], ['literal', popByState]]]]],
-                                    ['ln', ['max', 1, maxPop]]
-                                ],
-                                0, colorMin,
-                                1, colorMax
-                            ],  
-                            'rgb(200, 200, 200)'
-                        ]
-                    ],
+                    'fill-color': createSteppedColorExpression(popByState,minPop,maxPop,isLanguageData),
                     'fill-opacity': 0.7
                 }
             })
@@ -1465,6 +1422,60 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             // add click functionality later...
         })
+    }
+
+    function updateStateMap(data) {
+        const isLanguageData = state.selectedDataset === 'language-proficiency';
+        const map = window.stateMap;
+        
+        if (!map) return;
+    
+        // Process the data
+        const rows = data.slice(1).map(row => {
+            if (state.selectedDataset === 'race-ethnicity') {
+                return {
+                    state: row[4].padStart(2, '0'),
+                    NAME: row[0],
+                    POP: Number(row[1]),
+                    RACE: row[2],
+                    HISP: row[3]
+                }
+            } else {
+                return {
+                    state: row[4].padStart(2, '0'),
+                    NAME: row[2],
+                    POP: Number(row[0]),
+                    LANG: row[1]
+                }
+            }
+        });
+    
+        const popByState = {};
+        rows.forEach(row => {
+            popByState[row.state] = row.POP;
+        });
+    
+        const values = Object.values(popByState).filter(val => val > 0);
+        const minPop = Math.min(...values);
+        const maxPop = Math.max(...values);
+    
+        // Update the map source if it exists
+        if (map.getSource('states')) {
+            // Store the data for hover popups
+            window.currentStatePopByFips = popByState;
+            window.currentStateMinPop = minPop;
+            window.currentStateMaxPop = maxPop;
+            
+            map.setPaintProperty('states-fill', 'fill-color', 
+                createSteppedColorExpression(popByState, minPop, maxPop, isLanguageData)
+            );
+            
+            //update the legend with new data and colors
+            const labels = { raceLabels, hispanicLabels, languageLabels };
+            createLegend(minPop, maxPop, isLanguageData, 'state', state, labels);
+            
+            console.log(`Updated state map with ${rows.length} data points. Min pop: ${minPop}, Max pop: ${maxPop}`);
+        }
     }
     
 

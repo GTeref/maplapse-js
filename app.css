@@ -546,6 +546,92 @@ button:focus {
   }
 }
 
+.legend-gradient-section {
+  margin-bottom: 8px;
+}
+
+.legend-gradient-labels span {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 1px 3px;
+  border-radius: 2px;
+  color: #333;
+}
+
+.legend-steps-container {
+  border-top: 1px solid #eee;
+  padding-top: 8px;
+  margin-top: 5px;
+}
+
+.legend-steps-title {
+  font-size: 10px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #666;
+  text-align: center;
+}
+
+.legend-step {
+  display: flex;
+  align-items: center;
+  margin-bottom: 3px;
+  font-size: 10px;
+}
+
+.legend-step:last-child {
+  margin-bottom: 0;
+}
+
+.legend-step-color {
+  width: 16px;
+  height: 12px;
+  margin-right: 6px;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legend-step-label {
+  color: #555;
+  font-size: 10px;
+}
+
+/* Dark theme adjustments */
+.map-legend.dark-theme .legend-steps-container {
+  border-top-color: #555;
+}
+
+.map-legend.dark-theme .legend-steps-title {
+  color: #aaa;
+}
+
+.map-legend.dark-theme .legend-step-color {
+  border-color: #555;
+}
+
+.map-legend.dark-theme .legend-step-label {
+  color: #ccc;
+}
+
+.map-legend.dark-theme .legend-gradient-labels span {
+  background: rgba(40, 40, 40, 0.8);
+  color: #fff;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .legend-step-color {
+      width: 14px;
+      height: 10px;
+  }
+  
+  .legend-step-label,
+  .legend-steps-title {
+      font-size: 9px;
+  }
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
