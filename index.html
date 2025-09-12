@@ -17,22 +17,25 @@
     <div class="app-overseer-container">
         <header class="app-header">
             <div class="header-left">
-                <button id="menu-button" class="header-menu-button">
+                <button @click="toggleSidebar()" class="header-menu-button">
                     <i icon-name="menu"></i>
                 </button>
                 <h1 class="header-title">MapLapse</h1>
             </div>
             <div class="header-right">
-                <button id="settings-button" class="header-settings-button">
+                <button @click="toggleSettings()" class="header-settings-button">
                     <i icon-name="settings"></i>
                 </button>
-                <div id="settings-dropdown" class="settings-dropdown">
+                <div x-show="settingsOpen" 
+                    x-transition
+                    @click.outside="settingsOpen = false"
+                class="settings-dropdown">
                     <div class="settings-content">
                         <h3 class="settings-title">Settings</h3>
                         
                         <div class="setting-group">
                             <label for="map-style-select" class="setting-label">Map Style:</label>
-                            <select id="map-style-select" class="setting-select">
+                            <select x-model="mapStyle" id="map-style-select" class="setting-select">
                                 <option value="light">Light</option>
                                 <option value="dark">Dark</option>
                                 <option value="osm">OpenStreetMap</option>
@@ -44,7 +47,7 @@
         </header>
 
         <div class="app-body">
-            <aside id="sidebar" class="sidebar-container">
+            <aside :class="{'closed': !sidebarOpen}" class="sidebar-container">
                 <div class="sidebar-content">
                     <h2 class="sidebar-title">
                         Available Datasets
@@ -54,7 +57,7 @@
                             <label for="region-select" class="dropdown-label">
                                 Select Region:
                             </label>
-                            <select id="region-select" class="dropdown-select">
+                            <select x-model="region" class="dropdown-select">
                                 <option value="" selected>Please select a region.</option>
                                 <option value="US">United States</option>
                                 <option value="Indonesia">Indonesia</option>
@@ -62,11 +65,11 @@
                             </select>
                         </div>
 
-                        <div id="geography-group" class="dropdown-group">
-                            <label for="geography-select" class="dropdown-label">
+                        <div x-show="region" x-transition class="dropdown-group">
+                            <label class="dropdown-label">
                                 Select Geography:
                             </label> 
-                            <select id="geography-select" class="dropdown-select">
+                            <select x-model="geographyLevel" class="dropdown-select">
                                 <option value="">Please choose a geography level.</option>
                                 <option value="state">State/Province</option>
                                 <option value="county">County/District</option>
