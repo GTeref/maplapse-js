@@ -1,6 +1,6 @@
 // db.js imports
-import { setCache, getCache, initDB } from "./util/db.mjs"; 
-import { createLegend, hideLegend, formatLegendNumbers, updateLegendTheme, createSteppedColorExpression } from "./util/legend.mjs";
+import { setCache, getCache, initDB } from "../util/db.mjs"; 
+import { createLegend, hideLegend, formatLegendNumbers, updateLegendTheme, createSteppedColorExpression } from "../util/legend.mjs";
 
 document.addEventListener('DOMContentLoaded', async function() {
 

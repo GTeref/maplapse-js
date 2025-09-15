@@ -1,4 +1,3 @@
-import { on } from "nodemon";
 import * as db from "../util/db.mjs";
 import { MapController } from "./map";
 
@@ -24,7 +23,7 @@ window.mapApp() = () => ({
     async init(){
         // initialize DB on app start
         try {
-            await initDB();
+            await db.initDB();
             console.log('IndexedDB initialized successfully');
         } catch (error) {
             console.error('Failed to initialize IndexedDB:', error);
