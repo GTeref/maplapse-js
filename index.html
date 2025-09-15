@@ -96,13 +96,13 @@
                             Language Proficiency
                         </label> -->
                         
-                        <div id="dataset-options" class="dataset-options-container">
-                            <div id="race-options" class="dropdown-group">
+                        <div x-show="showDatasetOptions" x-transition class="dataset-options-container">
+                            <div x-show="showRaceOptions" class="dropdown-group">
                                 
                                 <label for="race-select" class="dropdown-label">
                                     Select Race:
                                 </label>
-                                <select id="race-select" class='dropdown-select' disabled>
+                                <select x-model="selectedRace" class='dropdown-select'>
                                     <option value="2">White</option>
                                     <option value="3">Black or African American</option>
                                     <option value="4">American Indian and Alaska Native</option>
@@ -113,20 +113,20 @@
                                 
     
                                 
-                                <label for="hispanic-select" class="dropdown-label">
+                                <label class="dropdown-label">
                                     Hispanic Origin:
                                 </label>
-                                <select id="hispanic-select" class="dropdown-select" disabled>
+                                <select x-model="selectedHispanic" class="dropdown-select">
                                     <option value="0">Not Hispanic or Latino</option>
                                     <option value="1">Hispanic or Latino</option>
                                 </select>
                                 
                             </div>
     
-                            <div id="language-options" class="dropdown-group">
+                            <div x-show="showLanguageOptions" class="dropdown-group">
                                 <div class="language-selector">
-                                    <label for="language-select" class="dropdown-label">Select Language:</label>
-                                    <select id="language-select" class="dropdown-select"disabled>   
+                                    <label class="dropdown-label">Select Language:</label>
+                                    <select x-model="selectedLanguage" class="dropdown-select">
                                         <option value="1">Population 5 years and over</option>
                                         <option value="2">Speak only English</option>
                                         <option value="3">Speak a language other than English at home</option>
@@ -146,12 +146,12 @@
                 </div>
             </aside>
 
-            <main class="map-view-container">
+            <main class="map-view-container" :class="{ 'sidebar-closed': !sidebarOpen }">
                 <div class="map-view-content">
                     <div id="map" class="plotly-container">
                         <!--we will insert the plotly map here-->
                         <!--if no option selected, display placeholder-->
-                        <div id="map-placeholder" class="map-placeholder">
+                        <div x-show="!selectedDataset" class="map-placeholder">
                             Select a dataset to get started
                         </div>
                     </div>
@@ -164,8 +164,8 @@
                         </div>
                     </div>
                 </div>
-                <button id="sidebar-toggle" class="sidebar-toggle-button">
-                    <i id="sidebar-toggle-icon" icon-name="chevron-left"></i>
+                <button @click="toggleSidebar()" class="sidebar-toggle-button">
+                    <i :icon-name="sidebarOpen ? 'chevron-left' : 'chevron-right'"></i>
                 </button>
             </main>
         </div>
@@ -173,9 +173,14 @@
         <div class="time-slider-container">
             <div class="time-slider-content">
                 <label for="time-slider" class="time-slider-label">
-                    Year: <span id="year-display">2019</span>
+                    Year: <span x-text="currentYear"></span>
                 </label>
-                <input id="time-slider" type="range" min="2015" max="2019" value="2019" class="time-slider-input">
+                <input x-model.number="currentYear" 
+                       type="range" 
+                       :min="timeSliderConfig.min" 
+                       :max="timeSliderConfig.max" 
+                       :disabled="timeSliderConfig.disabled"
+                       class="time-slider-input">
             </div>
         </div>
 
