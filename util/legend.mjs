@@ -225,4 +225,28 @@ function formatLegendNumbers(num){
     }
 }
 
+export const labels = {
+    raceLabels: {
+        '1': 'White',
+        '2': 'Black or African American',
+        '3': 'American Indian and Alaska Native',
+        '4': 'Asian',
+        '5': 'Native Hawaiian and Other Pacific Islander',
+        '6': 'Two or More Races'
+    },
+    hispanicLabels: {
+        '0': 'Not Hispanic or Latino',
+        '1': 'Hispanic or Latino'
+    },
+    languageLabels: {
+        '1': 'Population 5 years and over',
+        '2': 'Speak only English',
+        '3': 'Speak a language other than English at home',
+        '4': 'Spanish and Spanish Creole',
+        '5': 'Other Indo-European Languages',
+        '6': 'Asian and Pacific Island Languages',
+        '7': 'All Other Languages'
+    }
+};
+
 export { createLegend, hideLegend, formatLegendNumbers, updateLegendTheme, createSteppedColorExpression }

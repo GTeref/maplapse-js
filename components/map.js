@@ -1,6 +1,7 @@
 import * as db from "../util/db.mjs";
 import * as lg from "../util/legend.mjs";
 import * as gj from "../util/geojson.mjs";
+import { StateMap } from "./state-map.js";
 
 export class MapController {
     constructor(app) {
@@ -26,26 +27,16 @@ export class MapController {
             return ;
         }
 
-        const data=await this.fetchCensusData()
-        await setCache(cacheKey, data)
+        try {
+            const data=await this.fetchCensusData()
+            await db.setCache(cacheKey, data)
 
-        return this.renderWithData(data, isCountyLevel);
-    }
-
-    async renderWithData(data, isCountyLevel) {
-        if (isCountyLevel) {
-            countyGeojson=await gj.fetchCountyGeoJSON()
-            if (!this.countyMap){
-                // new CountyMap object
-
+            if (this.app.geographyLevel==='state'){
+                if (!this.stateMap) this.stateMap=new StateMap(this.app);
+                await this.stateMap.render(data);
             }
-            //countyMap.render
-        } else {
-            stateGeojson=await gj.fetchStateGeoJSON()
-            if (!this.stateMap){
-                // new StateMap object
-            }
-            //stateMap.render
+        } catch (error) {
+            console.error('Error fetching or rendering data:', error);
         }
     }
 
@@ -59,7 +50,7 @@ export class MapController {
         const hispParam = this.app.selectedDataset === 'race-ethnicity' ? `&HISP=${this.app.selectedHispanic}` : '';
         const raceParam = this.app.selectedDataset === 'race-ethnicity' ? `&RACE=${this.app.selectedRace}` : '';
         const langParam=this.app.selectedDataset==='language-proficiency' ? `&LAN7=${this.app.selectedLanguage}`: ''
-
+        const isCountyLevel = this.app.geographyLevel === 'county';
         let requestURL;
         if (this.app.selectedDataset==='race-ethnicity') {
             const nameField = this.app.currentYear <= 2018 ? 'GEONAME' : 'NAME'
@@ -73,13 +64,14 @@ export class MapController {
         const response = await fetch(requestURL)
         console.log("Fetching from:", requestURL)
         const json = await response.json();
+        return json;
     }
 
     updateMapStyle(newStyle) {
         this.countyMap?.updateStyle(newStyle);
         this.stateMap?.updateStyle(newStyle);
-        lg.updateLegendTheme(newStyle);
+        // lg.updateLegendTheme(newStyle);
     }
 
-    //prefetch data function
+    //prefetch data function?
 }

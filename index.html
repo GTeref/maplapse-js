@@ -5,199 +5,233 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MapLapse</title>
-    <link rel="stylesheet" href="app.css">
-    <!-- <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> -->
-    <!-- <script src="https://unpkg.com/lucide@latest"></script> -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script src="https://unpkg.com/maplibre-gl@^5.7.0/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@^5.7.0/dist/maplibre-gl.css" rel="stylesheet" />
+    <link rel="stylesheet" href="app.css">
+    <!-- <script type="module" src="components/app.js"></script> -->
+
+    <!-- <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script> -->
 </head>
-<body x-data="mapApp()" x-init="init()">
-    <div class="app-overseer-container">
-        <header class="app-header">
-            <div class="header-left">
-                <button @click="toggleSidebar()" class="header-menu-button">
-                    <i icon-name="menu"></i>
-                </button>
-                <h1 class="header-title">MapLapse</h1>
-            </div>
-            <div class="header-right">
-                <button @click="toggleSettings()" class="header-settings-button">
-                    <i icon-name="settings"></i>
-                </button>
-                <div x-show="settingsOpen" 
-                    x-transition
-                    @click.outside="settingsOpen = false"
-                class="settings-dropdown">
-                    <div class="settings-content">
-                        <h3 class="settings-title">Settings</h3>
-                        
-                        <div class="setting-group">
-                            <label for="map-style-select" class="setting-label">Map Style:</label>
-                            <select x-model="mapStyle" id="map-style-select" class="setting-select">
-                                <option value="light">Light</option>
-                                <option value="dark">Dark</option>
-                                <option value="osm">OpenStreetMap</option>
-                                <option value="demo">MapLibre Demo</option>
-                            </select>
-                        </div>
-                    </div>
+<body>
+    <div id="loading">Loading...</div>
+    <div id="app" style="display: none;" x-data="mapApp()" x-init="init()">
+        <div class="app-overseer-container">
+            <header class="app-header">
+                <div class="header-left">
+                    <button @click="toggleSidebar()" class="header-menu-button">
+                        <i icon-name="menu"></i>
+                    </button>
+                    <h1 class="header-title">MapLapse</h1>
                 </div>
-        </header>
-
-        <div class="app-body">
-            <aside :class="{'closed': !sidebarOpen}" class="sidebar-container">
-                <div class="sidebar-content">
-                    <h2 class="sidebar-title">
-                        Available Datasets
-                    </h2>
-                    <div class="dropdown-container">
-                        <div class="dropdown-group visible">
-                            <label for="region-select" class="dropdown-label">
-                                Select Region:
-                            </label>
-                            <select x-model="region" class="dropdown-select">
-                                <option value="" selected>Please select a region.</option>
-                                <option value="US">United States</option>
-                                <option value="Indonesia">Indonesia</option>
-                                <option value="World">World</option>
-                            </select>
-                        </div>
-
-                        <div x-show="region" x-transition class="dropdown-group">
-                            <label class="dropdown-label">
-                                Select Geography:
-                            </label> 
-                            <select x-model="geographyLevel" class="dropdown-select">
-                                <option value="">Please choose a geography level.</option>
-                                <option value="state">State/Province</option>
-                                <option value="county">County/District</option>
-                            </select>
-                        </div>
-
-                        <div id="dataset-group" class="dropdown-group">
-                            <label for="dataset-select" class="dropdown-label">
-                                Select Dataset:
-                            </label>
-                            <select id="dataset-select" class="dropdown-select">
-                                <option value="">Please choose a dataset.</option>
-                                <!--can dynamically insert datasets here-->
-                            </select>
-                        </div>
-
-
-                        <!-- <label class="dataset-selector-option">
-                            <input type="radio" name="dataset" value="Race and Ethnicity">
-                            Race and Ethnicity
-                        </label>
-                        <label class="dataset-selector-option">
-                            <input type="radio" name='dataset' value="Language Proficiency">
-                            Language Proficiency
-                        </label> -->
-                        
-                        <div x-show="showDatasetOptions" x-transition class="dataset-options-container">
-                            <div x-show="showRaceOptions" class="dropdown-group">
-                                
-                                <label for="race-select" class="dropdown-label">
-                                    Select Race:
-                                </label>
-                                <select x-model="selectedRace" class='dropdown-select'>
-                                    <option value="2">White</option>
-                                    <option value="3">Black or African American</option>
-                                    <option value="4">American Indian and Alaska Native</option>
-                                    <option value="5">Asian</option>
-                                    <option value="6">Native Hawaiian and Other Pacific Islander</option>
-                                    <option value="7">Two or More Races</option>
+                <div class="header-right">
+                    <button @click="toggleSettings()" class="header-settings-button">
+                        <i icon-name="settings"></i>
+                    </button>
+                    <!-- <div x-show="settingsOpen" 
+                        x-transition
+                        @click.outside="settingsOpen = false"
+                    class="settings-dropdown">
+                        <div class="settings-content">
+                            <h3 class="settings-title">Settings</h3>
+                            
+                            <div class="setting-group">
+                                <label for="map-style-select" class="setting-label">Map Style:</label>
+                                <select x-model="mapStyle" id="map-style-select" class="setting-select">
+                                    <option value="light">Light</option>
+                                    <option value="dark">Dark</option>
+                                    <option value="osm">OpenStreetMap</option>
+                                    <option value="demo">MapLibre Demo</option>
                                 </select>
-                                
-    
-                                
+                            </div>
+                        </div>
+                    </div> -->
+                </div>
+            </header>
+
+            <div class="app-body">
+                <aside :class="{'closed': !sidebarOpen}" class="sidebar-container">
+                    <div class="sidebar-content">
+                        <h2 class="sidebar-title">
+                            Available Datasets
+                        </h2>
+                        <div class="dropdown-container">
+                            <div class="dropdown-group visible">
+                                <label for="region-select" class="dropdown-label">
+                                    Select Region:
+                                </label>
+                                <select x-model="region" @change="console.log('Region changed to:', region)" class="dropdown-select">
+                                    <option value="" selected>Please select a region.</option>
+                                    <option value="US">United States</option>
+                                    <option value="Indonesia">Indonesia</option>
+                                    <option value="World">World</option>
+                                </select>
+                            </div>
+
+                            <div x-show="region" x-transition class="dropdown-group">
                                 <label class="dropdown-label">
-                                    Hispanic Origin:
-                                </label>
-                                <select x-model="selectedHispanic" class="dropdown-select">
-                                    <option value="0">Not Hispanic or Latino</option>
-                                    <option value="1">Hispanic or Latino</option>
+                                    Select Geography:
+                                </label> 
+                                <select x-model="geographyLevel" @change="console.log('Geography changed to:', geographyLevel)" class="dropdown-select">
+                                    <option value="">Please choose a geography level.</option>
+                                    <option value="state">State/Province</option>
+                                    <option value="county">County/District</option>
                                 </select>
-                                
                             </div>
-    
-                            <div x-show="showLanguageOptions" class="dropdown-group">
-                                <div class="language-selector">
-                                    <label class="dropdown-label">Select Language:</label>
-                                    <select x-model="selectedLanguage" class="dropdown-select">
-                                        <option value="1">Population 5 years and over</option>
-                                        <option value="2">Speak only English</option>
-                                        <option value="3">Speak a language other than English at home</option>
-                                        <option value="4">Spanish and Spanish Creole</option>
-                                        <option value="5">Other Indo-European Languages</option>
-                                        <option value="6">Asian and Pacific Island Languages</option>
-                                        <option value="7">All Other Languages</option>
+
+                            <div x-show="geographyLevel" x-transition class="dropdown-group">
+                                <label for="dataset-select" class="dropdown-label">
+                                    Select Dataset:
+                                </label>
+                                <select x-model="selectedDataset" @change="console.log('Dataset changed to:', selectedDataset)" class="dropdown-select">
+                                    <option value="">Please choose a dataset.</option>
+                                    <!--can dynamically insert datasets here-->
+                                    <option value="race-ethnicity">Race and Ethnicity</option>
+                                    <option value="language-proficiency">Language Proficiency</option>
+                                </select>
+                            </div>
+
+
+                            <!-- <label class="dataset-selector-option">
+                                <input type="radio" name="dataset" value="Race and Ethnicity">
+                                Race and Ethnicity
+                            </label>
+                            <label class="dataset-selector-option">
+                                <input type="radio" name='dataset' value="Language Proficiency">
+                                Language Proficiency
+                            </label> -->
+                            
+                            <div x-show="showDatasetOptions" x-transition class="dataset-options-container">
+                                <div x-show="showRaceOptions" class="dropdown-group">
+                                    
+                                    <label for="race-select" class="dropdown-label">
+                                        Select Race:
+                                    </label>
+                                    <select x-model="selectedRace" class='dropdown-select'>
+                                        <option value="2">White</option>
+                                        <option value="3">Black or African American</option>
+                                        <option value="4">American Indian and Alaska Native</option>
+                                        <option value="5">Asian</option>
+                                        <option value="6">Native Hawaiian and Other Pacific Islander</option>
+                                        <option value="7">Two or More Races</option>
                                     </select>
+                                    
+        
+                                    
+                                    <label class="dropdown-label">
+                                        Hispanic Origin:
+                                    </label>
+                                    <select x-model="selectedHispanic" class="dropdown-select">
+                                        <option value="0">Not Hispanic or Latino</option>
+                                        <option value="1">Hispanic or Latino</option>
+                                    </select>
+                                    
                                 </div>
-                                <h3>For Language Proficiency, US Census only has data for 2013 so slider is fixed.</h3>
-                                <br>
-                                <h3>NOTE: Spanish and Spanish Creole does not work (the API call literally returns nothing)</h3>
+        
+                                <div x-show="showLanguageOptions" class="dropdown-group">
+                                    <div class="language-selector">
+                                        <label class="dropdown-label">Select Language:</label>
+                                        <select x-model="selectedLanguage" class="dropdown-select">
+                                            <option value="1">Population 5 years and over</option>
+                                            <option value="2">Speak only English</option>
+                                            <option value="3">Speak a language other than English at home</option>
+                                            <option value="4">Spanish and Spanish Creole</option>
+                                            <option value="5">Other Indo-European Languages</option>
+                                            <option value="6">Asian and Pacific Island Languages</option>
+                                            <option value="7">All Other Languages</option>
+                                        </select>
+                                    </div>
+                                    <h3>For Language Proficiency, US Census only has data for 2013 so slider is fixed.</h3>
+                                    <br>
+                                    <h3>NOTE: Spanish and Spanish Creole does not work (the API call literally returns nothing)</h3>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </aside>
+
+                <main class="map-view-container" :class="{ 'sidebar-closed': !sidebarOpen }">
+                    <div class="map-view-content">
+                        <div id="map" class="plotly-container">
+                            <!--we will insert the plotly map here-->
+                            <!--if no option selected, display placeholder-->
+                            <div x-show="!selectedDataset" class="map-placeholder">
+                                Select a dataset to get started
                             </div>
                         </div>
-                        
-                    </div>
-                </div>
-            </aside>
-
-            <main class="map-view-container" :class="{ 'sidebar-closed': !sidebarOpen }">
-                <div class="map-view-content">
-                    <div id="map" class="plotly-container">
-                        <!--we will insert the plotly map here-->
-                        <!--if no option selected, display placeholder-->
-                        <div x-show="!selectedDataset" class="map-placeholder">
-                            Select a dataset to get started
+                        <div id="map-legend" class="map-legend" style="display: none;">
+                            <div class="legend-title"></div>
+                            <div class="legend-gradient"></div>
+                            <div class="legend-labels">
+                                <span class="legend-min"></span>
+                                <span class="legend-max"></span>
+                            </div>
                         </div>
                     </div>
-                    <div id="map-legend" class="map-legend" style="display: none;">
-                        <div class="legend-title"></div>
-                        <div class="legend-gradient"></div>
-                        <div class="legend-labels">
-                            <span class="legend-min"></span>
-                            <span class="legend-max"></span>
-                        </div>
-                    </div>
+                    <button @click="toggleSidebar()" class="sidebar-toggle-button">
+                        <i :icon-name="sidebarOpen ? 'chevron-left' : 'chevron-right'"></i>
+                    </button>
+                </main>
+            </div>
+
+            <div class="time-slider-container">
+                <div class="time-slider-content">
+                    <label for="time-slider" class="time-slider-label">
+                        Year: <span x-text="currentYear"></span>
+                    </label>
+                    <input x-model.number="currentYear" 
+                        type="range" 
+                        :min="timeSliderConfig.min" 
+                        :max="timeSliderConfig.max" 
+                        :disabled="timeSliderConfig.disabled"
+                        class="time-slider-input">
                 </div>
-                <button @click="toggleSidebar()" class="sidebar-toggle-button">
-                    <i :icon-name="sidebarOpen ? 'chevron-left' : 'chevron-right'"></i>
-                </button>
-            </main>
-        </div>
+            </div>
 
-        <div class="time-slider-container">
-            <div class="time-slider-content">
-                <label for="time-slider" class="time-slider-label">
-                    Year: <span x-text="currentYear"></span>
-                </label>
-                <input x-model.number="currentYear" 
-                       type="range" 
-                       :min="timeSliderConfig.min" 
-                       :max="timeSliderConfig.max" 
-                       :disabled="timeSliderConfig.disabled"
-                       class="time-slider-input">
+            <div id="info-sidebar" class="info-sidebar">
+                <div class="info-header">
+                <h3 id="county-title">County Details</h3>
+                <button id="close-info" class="close-button">&times;</button>
+                </div>
+                <div id="county-details" class="details-container">
+                <div id="county-stats"></div>
+                <div id="county-chart"></div>
+                </div>
             </div>
+            
         </div>
-
-        <div id="info-sidebar" class="info-sidebar">
-            <div class="info-header">
-              <h3 id="county-title">County Details</h3>
-              <button id="close-info" class="close-button">&times;</button>
-            </div>
-            <div id="county-details" class="details-container">
-              <div id="county-stats"></div>
-              <div id="county-chart"></div>
-            </div>
-        </div>
-        
     </div>
 
-    <script type="module" src="app.js"></script>
+    <script type="module">
+        console.log('Loading modules...');
+        
+        import('./components/app.js').then(() => {
+            console.log('App module loaded successfully');
+            console.log('mapApp available:', typeof window.mapApp);
+            
+            import('https://unpkg.com/alpinejs@3.x.x/dist/module.esm.js').then((Alpine) => {
+                console.log('Alpine loaded');
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                
+                Alpine.default.start();
+                
+                console.log('Everything initialized!');
+            }).catch(error => {
+                console.error('Failed to load Alpine:', error);
+                document.getElementById('loading').innerHTML = 'Failed to load Alpine.js';
+            });
+        }).catch(error => {
+            console.error('Failed to load app:', error);
+            document.getElementById('loading').innerHTML = 'Failed to load app modules. Check console for details.';
+        });
+    </script>
+
+    <!-- <script type="module" src="components/app.js"></script>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script> -->
 </body>
 
 </html>
