@@ -180,7 +180,7 @@ body {
 }
 
 /* Dataset-specific option containers */
-.dataset-options-container {
+/* .dataset-options-container {
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #e5e7eb;
@@ -189,6 +189,26 @@ body {
 
 .dataset-options-container.visible {
   display: block;
+} */
+
+.dataset-options-container {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.3s ease, max-height 0.3s ease;
+}
+
+.dataset-options-container:not([style*="display: none"]) {
+  opacity: 1 !important;
+  max-height: 1000px !important;
+  overflow: visible !important;
+}
+
+.dataset-options-container .dropdown-group {
+  opacity: 1 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  transform: translateY(0) !important;
 }
 
 /* Map container */

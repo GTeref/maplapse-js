@@ -21,19 +21,30 @@ export class MapController {
         const cacheKey = this.generateCacheKey();
 
         // Check cache first
+        let data;
         const cachedData = await db.getCache(cacheKey);
         if (cachedData) {
             console.log('Using cached data for', cacheKey);
-            return ;
+            data=cachedData
+        } else {
+            try{
+                data=await this.fetchCensusData()
+                await db.setCache(cacheKey, data)
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                return;
+            }
         }
 
         try {
-            const data=await this.fetchCensusData()
-            await db.setCache(cacheKey, data)
+            // const data=await this.fetchCensusData()
+            // await db.setCache(cacheKey, data)
 
             if (this.app.geographyLevel==='state'){
                 if (!this.stateMap) this.stateMap=new StateMap(this.app);
                 await this.stateMap.render(data);
+                console.log('Rendered state-level map');
             }
         } catch (error) {
             console.error('Error fetching or rendering data:', error);
