@@ -70,14 +70,20 @@ export const mapStyles = {
 }
 
 function setupMapInteractions(layerId) {
+    let popup=null
     this.map.on('mouseenter', layerId, (e) => {
         this.map.getCanvas().style.cursor = 'pointer';
         
         if (e.features.length > 0) {
             const feature = e.features[0];
             const props = feature.properties;
+
+            if (popup) { 
+                popup.remove() 
+                popup=null
+            }
             
-            const popup = new maplibregl.Popup({
+            popup = new maplibregl.Popup({
                 closeButton: false,
                 closeOnClick: false
             })
@@ -91,15 +97,15 @@ function setupMapInteractions(layerId) {
             `)
             .addTo(this.map);
             
-            this.currentPopup = popup;
+            // this.currentPopup = popup;
         }
     });
 
     this.map.on('mouseleave', layerId, () => {
         this.map.getCanvas().style.cursor = '';
-        if (this.currentPopup) {
-            this.currentPopup.remove();
-            this.currentPopup = null;
+        if (popup) {
+            popup.remove();
+            popup = null;
         }
     });
 }
