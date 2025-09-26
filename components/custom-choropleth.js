@@ -37,6 +37,89 @@ export class CustomChoroplethController {
         console.log('Custom choropleth map initialized');
     }
 
+    standardizeData(rawData, type) {
+        if (type === 'table') {
+            return this.standardizeTableData(rawData);
+        } else if (type === 'geojson') {
+            return this.standardizeGeoJsonData(rawData);
+        }
+        throw new Error(`Unknown data type: ${type}`);
+    }
+
+    standardizeTableData(rawData) {
+        // Handle common JSON structures dynamically
+        let dataArray = [];
+        
+        if (Array.isArray(rawData)) {
+            // Check if it's an array of arrays (e.g., tabular data like Census API)
+            if (rawData.length > 0 && Array.isArray(rawData[0])) {
+                // Assume first row is headers
+                const headers = rawData[0];
+                dataArray = rawData.slice(1).map(row => {
+                    const obj = {};
+                    headers.forEach((header, index) => {
+                        obj[header] = row[index];
+                    });
+                    return obj;
+                });
+                console.log('Converted array-of-arrays to array of objects using headers:', headers);
+            } else {
+                // Already an array of objects or primitives
+                dataArray = rawData;
+            }
+        } else if (typeof rawData === 'object' && rawData !== null) {
+            // Check for common nested keys (e.g., 'data', 'results', 'items')
+            const possibleKeys = ['data', 'results', 'items', 'records', 'features']; // Add more if needed, but keep dynamic
+            for (const key of possibleKeys) {
+                if (Array.isArray(rawData[key])) {
+                    dataArray = rawData[key];
+                    console.log(`Extracted data from nested key: ${key}`);
+                    break;
+                }
+            }
+            if (dataArray.length === 0) {
+                // If no array found, treat the object as a single record or warn
+                dataArray = [rawData];
+                console.warn('Table data is not an array; treating as single record. Verify field mappings.');
+            }
+        } else {
+            throw new Error('Table data must be an array or object with an array property.');
+        }
+        
+        // Ensure each item is an object and validate presence of user-specified fields
+        const { tableIdField, tableNumericField } = this.app.customData;
+        dataArray = dataArray.filter(item => typeof item === 'object' && item !== null);
+        
+        // Optional: Log or warn about missing fields
+        const missingFields = dataArray.some(item => !(tableIdField in item) || !(tableNumericField in item));
+        if (missingFields) {
+            console.warn(`Some records are missing specified fields (${tableIdField} or ${tableNumericField}). They will be skipped.`);
+        }
+        
+        return dataArray;
+    }
+
+    standardizeGeoJsonData(rawData) {
+        // Basic GeoJSON validation (GeoJSON spec: must have 'type' and 'features')
+        if (!rawData || typeof rawData !== 'object' || rawData.type !== 'FeatureCollection' || !Array.isArray(rawData.features)) {
+            throw new Error('Invalid GeoJSON: Must be a FeatureCollection with a features array.');
+        }
+        
+        // Ensure features are valid and have properties
+        rawData.features = rawData.features.filter(feature => 
+            feature && feature.type === 'Feature' && typeof feature.properties === 'object'
+        );
+        
+        // Optional: Warn about missing geometry or user-specified ID field
+        const { geometryIdField } = this.app.customData;
+        const missingIds = rawData.features.some(f => !(geometryIdField in f.properties));
+        if (missingIds) {
+            console.warn(`Some features are missing the specified ID field (${geometryIdField}). They will not join properly.`);
+        }
+        
+        return rawData;
+    }
+
     async generateChoropleth() {
         const { tableUrl, geometryUrl, tableIdField, geometryIdField, tableNumericField } = this.app.customData;
 
@@ -78,11 +161,14 @@ export class CustomChoroplethController {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        return await response.json();
+        const rawData=await response.json();
+        const type= url.endsWith('.geojson') || url.includes('geojson') ? 'geojson' : 'table';
+        return this.standardizeData(rawData, type);
     }
 
     joinDataToGeometry(tableData, geometryData) {
         const { tableIdField, geometryIdField, tableNumericField } = this.app.customData;
+
         
         // Create lookup map from table data
         const dataLookup = {};
@@ -96,7 +182,7 @@ export class CustomChoroplethController {
 
         // Join to geometry features
         geometryData.features.forEach(feature => {
-            const geoId = feature.properties[geometryIdField];
+            const geoId = feature.properties[geometryIdField] || feature[geometryIdField];
             if (geoId && dataLookup[geoId] !== undefined) {
                 feature.properties.choropleth_value = dataLookup[geoId];
             } else {

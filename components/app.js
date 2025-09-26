@@ -182,11 +182,23 @@ window.mapApp = () => {
         async generateCustomChoropleth() {
             console.log('Generating custom choropleth...');
             
-            if (!this.customChoroplethController) {
-                this.customChoroplethController = new CustomChoroplethController(this);
-            }
+            this.customData.isLoading = true;
+            this.customData.error = null;
             
-            await this.customChoroplethController.generateChoropleth();
+            try {
+                if (!this.customChoroplethController) {
+                    this.customChoroplethController = new CustomChoroplethController(this);
+                }
+                
+                await this.customChoroplethController.generateChoropleth();
+                console.log('Custom choropleth generated successfully');
+            } catch (error) {
+                console.error('Error generating custom choropleth:', error);
+                this.customData.error = error.message; // Bind this to UI for display
+            } finally {
+                this.customData.isLoading = false;
+            }
+
         },
 
     }

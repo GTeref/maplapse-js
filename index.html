@@ -219,8 +219,10 @@
                                 <button @click="generateCustomChoropleth()" 
                                         :disabled="!customData.tableUrl || !customData.geometryUrl" 
                                         class="generate-button">
-                                    Generate Choropleth
+                                    <span x-show="!customData.isLoading">Generate Choropleth</span>
+                                    <span x-show="customData.isLoading">Loading...</span>
                                 </button>
+                                <div x-show="customData.error" class="error-message" x-text="customData.error"></div>
                             </div>
                         </div>
                     </div>
