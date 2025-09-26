@@ -1,7 +1,8 @@
 import * as db from "../util/db.mjs";
 import { MapController } from "./map.js";
+import { CustomChoroplethController } from "./custom-choropleth.js";
 
-window.mapApp = () => {
+window.mapApp = () => { 
     console.log('App initialized');
     
     return {
@@ -19,6 +20,19 @@ window.mapApp = () => {
         mapStyle: 'osm',
         cache:{},
         settingsOpen: false,
+
+        appMode: 'census',
+        
+        customData: {
+            tableUrl: '',
+            geometryUrl: '',
+            tableIdField: '',
+            geometryIdField: '',
+            tableNumericField: '',
+            colorScheme: 'Spectral',
+            binCount: 10,
+            title: ''
+        },
 
         mapController: null,
         sidebarController: null,
@@ -115,6 +129,23 @@ window.mapApp = () => {
             this.settingsOpen = !this.settingsOpen;
         },
 
+        //mode switching
+        switchToCustomMode() {
+            this.appMode = 'custom';
+            this.clearMap();
+        },
+
+        switchToCensusMode() {
+            this.appMode = 'census';
+            this.clearMap();
+        },
+
+        clearMap() {
+            this.stateMap?.destroy();
+            this.countyMap?.destroy();
+            this.customChoroplethController?.destroy();
+        },
+
         //getters for computed properties
         get showDatasetOptions() {
             return this.selectedDataset !== null;  
@@ -128,6 +159,15 @@ window.mapApp = () => {
             return this.selectedDataset === 'language-proficiency';
         },
 
+        //custom mode getters
+        get showCensusControls() {
+            return this.appMode === 'census';
+        },
+
+        get showCustomControls() {
+            return this.appMode === 'custom';
+        },
+
         get timeSliderConfig() {
             if (this.selectedDataset === 'race-ethnicity') {
                 return { min: 2015, max: 2019, disabled: false}
@@ -137,6 +177,16 @@ window.mapApp = () => {
             }
             return { min: 2015, max: 2019, disabled: true};
 
+        },
+        
+        async generateCustomChoropleth() {
+            console.log('Generating custom choropleth...');
+            
+            if (!this.customChoroplethController) {
+                this.customChoroplethController = new CustomChoroplethController(this);
+            }
+            
+            await this.customChoroplethController.generateChoropleth();
         },
 
     }

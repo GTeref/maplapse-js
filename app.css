@@ -407,6 +407,82 @@ button:focus {
   align-items: center;
 }
 
+.mode-toggle-container {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.mode-button {
+    flex: 1;
+    padding: 8px 12px;
+    border: 2px solid #007bff;
+    background: white;
+    color: #007bff;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.mode-button:hover {
+    background: #f8f9fa;
+}
+
+.mode-button.active {
+    background: #007bff;
+    color: white;
+}
+
+/* Custom form styles */
+.custom-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.generate-button {
+    padding: 12px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.generate-button:hover:not(:disabled) {
+    background: #218838;
+}
+
+.generate-button:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
 /* Settings dropdown */
 .settings-dropdown {
   position: absolute;
