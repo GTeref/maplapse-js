@@ -10,6 +10,17 @@ export class CustomChoroplethController {
         this.mapInitialized = false;
         this.currentSourceId = null;
         this.currentLayerId = null;
+
+        this.STD_FORMAT={
+            table:{
+                idField: 'id',
+                valueField: 'value'
+            },
+            geojson:{
+                type: 'FeatureCollection',
+                idField: 'id'
+            }
+        }
     }
 
     async initMap() {
@@ -49,7 +60,10 @@ export class CustomChoroplethController {
     standardizeTableData(rawData) {
         // Handle common JSON structures dynamically
         let dataArray = [];
+        let detectedIdField=null;
+        let detectedValueField=null;
         
+        //1. extract array
         if (Array.isArray(rawData)) {
             // Check if it's an array of arrays (e.g., tabular data like Census API)
             if (rawData.length > 0 && Array.isArray(rawData[0])) {
@@ -68,7 +82,7 @@ export class CustomChoroplethController {
                 dataArray = rawData;
             }
         } else if (typeof rawData === 'object' && rawData !== null) {
-            // Check for common nested keys (e.g., 'data', 'results', 'items')
+            // Check for common nested keys
             const possibleKeys = ['data', 'results', 'items', 'records', 'features']; // Add more if needed, but keep dynamic
             for (const key of possibleKeys) {
                 if (Array.isArray(rawData[key])) {
@@ -82,21 +96,68 @@ export class CustomChoroplethController {
                 dataArray = [rawData];
                 console.warn('Table data is not an array; treating as single record. Verify field mappings.');
             }
-        } else {
-            throw new Error('Table data must be an array or object with an array property.');
         }
+
+        //2. auto-detect value and id fields
+        if (dataArray.length > 0) {
+            const sample = dataArray[0];
+            const fields = Object.keys(sample);
+
+            //there has to be a way to do these more dynamically....user input maybe?
+            const idPatterns = ['id', 'ID', 'fips', 'FIPS', 'geoid', 'GEOID', 'code', 'state', 'county'];
+            detectedIdField = this.findFieldByPatterns(fields, idPatterns) || 
+                            this.app.customData.tableIdField ||
+                            fields[0];
+            
+            // Detect numeric value field
+            const numericFields = fields.filter(field => {
+                const val = sample[field];
+                return !isNaN(parseFloat(val)) && isFinite(val);
+            });
+            
+            const valuePatterns = ['value', 'population', 'pop', 'count', 'total', 'amount', 'POP', 'EST'];
+            detectedValueField = this.findFieldByPatterns(numericFields, valuePatterns) ||
+                                this.app.customData.tableNumericField ||
+                                numericFields[0];
+            
+            console.log(`Auto-detected ID field: '${detectedIdField}'`);
+            console.log(`Auto-detected value field: '${detectedValueField}'`);
+        }
+
+        //3. transform to std format
+        const standardized=dataArray.map(row=> {
+            const id = this.coerceToString(row[detectedIdField]);
+            const value= parseFloat(row[detectedValueField]);
+            return {
+                // when would std_format ever be useful?
+                // [this.STD_FORMAT.table.idField]: id,
+                // [this.STD_FORMAT.table.valueField]: isNaN(value) ? null : value
+                id: id,
+                value: isNaN(value) ? null : value,
+                _original: row
+            };
+        }).filter(row => row.id !== null && row.id !== undefined);
+
+        this.detectedFields = {
+            table: { idField: detectedIdField, valueField: detectedValueField }
+        };
+        
+        return standardized;
+        // else {
+        //     throw new Error('Table data must be an array or object with an array property.');
+        // }
         
         // Ensure each item is an object and validate presence of user-specified fields
-        const { tableIdField, tableNumericField } = this.app.customData;
-        dataArray = dataArray.filter(item => typeof item === 'object' && item !== null);
+        // const { tableIdField, tableNumericField } = this.app.customData;
+        // dataArray = dataArray.filter(item => typeof item === 'object' && item !== null);
         
-        // Optional: Log or warn about missing fields
-        const missingFields = dataArray.some(item => !(tableIdField in item) || !(tableNumericField in item));
-        if (missingFields) {
-            console.warn(`Some records are missing specified fields (${tableIdField} or ${tableNumericField}). They will be skipped.`);
-        }
+        // // Optional: Log or warn about missing fields
+        // const missingFields = dataArray.some(item => !(tableIdField in item) || !(tableNumericField in item));
+        // if (missingFields) {
+        //     console.warn(`Some records are missing specified fields (${tableIdField} or ${tableNumericField}). They will be skipped.`);
+        // }
         
-        return dataArray;
+        // return dataArray;
     }
 
     standardizeGeoJsonData(rawData) {
@@ -118,6 +179,28 @@ export class CustomChoroplethController {
         }
         
         return rawData;
+    }
+
+    //find field matching common patterns
+    findFieldByPatterns(fields, patterns) {
+        for (const pattern of patterns) {
+            const match = fields.find(f => 
+                f.toLowerCase() === pattern.toLowerCase() ||
+                f.toLowerCase().includes(pattern.toLowerCase())
+            );
+            if (match) return match;
+        }
+        return null;
+    }
+
+    //coerce vals to string
+    coerceToString(value) {
+        if (value === null || value === undefined) return null;
+        
+        if (typeof value === 'number') {
+            return value.toString();
+        }
+        return String(value).trim();
     }
 
     async generateChoropleth() {
@@ -383,6 +466,24 @@ export class CustomChoroplethController {
                 popup = null;
             }
         });
+    }
+
+    getDetectedFields() {
+        return this.detectedFields;
+    }
+
+    //allow users to override detected fields
+    applyUserOverrides(overrides) {
+        if (overrides.tableIdField) {
+            this.app.customData.tableIdField = overrides.tableIdField;
+        }
+        if (overrides.tableNumericField) {
+            this.app.customData.tableNumericField = overrides.tableNumericField;
+        }
+        if (overrides.geometryIdField) {
+            this.app.customData.geometryIdField = overrides.geometryIdField;
+        }
+        console.log('Applied user overrides:', overrides);
     }
 
     //update legend function?
