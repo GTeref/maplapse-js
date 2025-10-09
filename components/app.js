@@ -28,6 +28,7 @@ window.mapApp = () => {
             geometryUrl: '',
             tableIdField: '',
             geometryIdField: '',
+            geometryNameField: '',
             tableNumericField: '',
             colorScheme: 'Spectral',
             binCount: 10,
