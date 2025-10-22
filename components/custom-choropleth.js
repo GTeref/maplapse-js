@@ -246,8 +246,12 @@ export class CustomChoroplethController {
         //require ALL fields for now
         if (!tableUrl || !geometryUrl || !tableIdField || !geometryIdField || !tableNumericField) {
             console.warn('Missing required fields for choropleth generation');
+            this.app.customData.isLoading=false;
             return;
         }
+
+        this.app.customData.isLoading=true;
+        this.app.customData.error=null;
 
         try {
             const joinedData = await this.processData();
@@ -262,6 +266,10 @@ export class CustomChoroplethController {
             
         } catch (error) {
             console.error('Error generating custom choropleth:', error);
+            this.app.customData.error = error.message;
+            throw error;
+        } finally {
+            this.app.customData.isLoading=false;
         }
     }
 

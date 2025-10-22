@@ -32,8 +32,24 @@ window.mapApp = () => {
             tableNumericField: '',
             colorScheme: 'Spectral',
             binCount: 10,
-            title: ''
+            title: '',
+            isLoading: false,
+            error: null,
+            mapRendered: false,
+
+            //timelapse settings
+            timelapseEnabled: false,
+            startYear: 2015,
+            endYear: 2019,
+            currentTimelapseYear: 2015,
+            isPlaying: false,
+            playbackSpeed: 1000
         },
+
+        //preset management
+        customPresets:[],
+        showPresetSaveModal:false,
+        presetName:'',
 
         mapController: null,
         sidebarController: null,
@@ -54,7 +70,75 @@ window.mapApp = () => {
             this.mapController = new MapController(this);
             this.setupWatchers();
 
+            await this.loadCustomPresets();
+        },
 
+        async loadCustomPresets(){
+            try{
+                this.customPresets = await db.getAllPresets();
+                console.log('Loaded custom presets:', this.customPresets);
+            } catch (error) {
+                console.error('Failed to load custom presets:', error);
+            }
+        },
+
+        async savePreset(){
+            if (!this.presetName.trim()){
+                alert('Preset name cannot be empty');
+                return;
+            }
+
+            try{
+                const preset={
+                    id: Date.now(),
+                    name: this.presetName.trim(),
+                    timestamp: new Date().toISOString(),
+                    config: {
+                        tableUrl: this.customData.tableUrl,
+                        geometryUrl: this.customData.geometryUrl,
+                        tableIdField: this.customData.tableIdField,
+                        geometryIdField: this.customData.geometryIdField,
+                        geometryNameField: this.customData.geometryNameField,
+                        tableNumericField: this.customData.tableNumericField,
+                        colorScheme: this.customData.colorScheme,
+                        binCount: this.customData.binCount,
+                        title: this.customData.title
+                    }
+                };
+                await db.savePreset(preset);
+                this.loadCustomPresets();
+                this.showPresetSaveModal = false;
+                this.presetName = '';
+                console.log('Preset saved successfully');
+            } catch (error) {
+                console.error('Failed to save preset:', error);
+            }
+        },
+
+        async loadPreset(preset){
+            Object.assign(this.customData, preset.config);
+            console.log('Preset loaded:', preset);
+            await this.generateCustomChoropleth();
+        },
+
+        async deletePreset(presetId){
+            if (!confirm('Are you sure you want to delete this preset?')){
+                return;
+            }
+
+            try{
+                await db.deletePreset(presetId);
+                this.loadCustomPresets();
+                console.log('Preset deleted successfully');
+            } catch (error) {
+                console.error('Failed to delete preset:', error);
+            }
+        },
+
+        formatDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleDateString() + ' ' + 
+                   date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         },
 
         setupWatchers(){
@@ -70,6 +154,14 @@ window.mapApp = () => {
                 console.log('Geography watcher triggered:', value);
                 if (!value) {
                     this.selectedDataset = null;
+                }
+            });
+            this.$watch('showPresetSaveModal', (value) => {
+                if (value) {
+                    this.$nextTick(() => {
+                        const input = this.$refs.presetInput;
+                        if (input) input.focus();
+                    });
                 }
             });
             this.$watch('selectedDataset', ()=> this.onDatasetChange())

@@ -745,3 +745,129 @@ button:focus {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+.preset-manager {
+    border: 1px solid #e5e7eb;
+}
+
+.preset-save-btn {
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #3b82f6;
+    color: white;
+}
+
+.preset-save-btn:hover:not(:disabled) {
+    background: #2563eb;
+}
+
+.preset-save-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.preset-delete-btn {
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+}
+
+.preset-delete-btn:hover {
+    background: #fee2e2;
+}
+
+.preset-item {
+    transition: background 0.2s;
+}
+
+.preset-item:hover {
+    background: #f9fafb !important;
+}
+
+/* Modal styles */
+.preset-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.preset-modal-content {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.preset-modal-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 16px;
+}
+
+.preset-modal-cancel {
+    padding: 8px 16px;
+    background: #e5e7eb;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.preset-modal-cancel:hover {
+    background: #d1d5db;
+}
+
+.preset-modal-save {
+    padding: 8px 16px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.preset-modal-save:hover:not(:disabled) {
+    background: #2563eb;
+}
+
+.preset-modal-save:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* Scrollbar styling for preset list */
+.preset-list > div::-webkit-scrollbar {
+    width: 8px;
+}
+
+.preset-list > div::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.preset-list > div::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.preset-list > div::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}

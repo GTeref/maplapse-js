@@ -168,12 +168,83 @@
 
                         <div x-show="showCustomControls" x-transition>
                             <h2 class="sidebar-title">Custom Choropleth</h2>
+
+                            <!-- Preset Manager Section -->
+                            <div class="preset-manager" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <h3 style="margin: 0; font-size: 14px; font-weight: 600;">Presets</h3>
+                                    <button @click="showPresetSaveModal = true" 
+                                            :disabled="!customData.tableUrl || !customData.geometryUrl"
+                                            class="preset-save-btn"
+                                            style="padding: 4px 12px; font-size: 12px;">
+                                        <i icon-name="save" style="width: 14px; height: 14px;"></i>
+                                        Save Current
+                                    </button>
+                                </div>
+                                
+                                <div class="preset-list">
+                                    <template x-if="customPresets.length === 0">
+                                        <p style="font-size: 12px; color: #6b7280; margin: 0;">No saved presets yet</p>
+                                    </template>
+                                    
+                                    <template x-if="customPresets.length > 0">
+                                        <div style="max-height: 150px; overflow-y: auto;">
+                                            <template x-for="preset in customPresets" :key="preset.id">
+                                                <div class="preset-item" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 4px; background: white; border-radius: 4px; border: 1px solid #e5e7eb;">
+                                                    <div style="flex: 1; cursor: pointer;" @click="loadPreset(preset)">
+                                                        <div style="font-size: 13px; font-weight: 500;" x-text="preset.name"></div>
+                                                        <div style="font-size: 11px; color: #6b7280;" x-text="formatDate(preset.timestamp)"></div>
+                                                    </div>
+                                                    <button @click="deletePreset(preset.id)" 
+                                                            class="preset-delete-btn"
+                                                            style="padding: 4px 8px; color: #dc2626;">
+                                                        <i icon-name="trash-2" style="width: 14px; height: 14px;"></i>
+                                                    </button>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- Save Preset Modal -->
+                            <div x-show="showPresetSaveModal" 
+                                x-transition
+                                x-teleport="body"
+                                @click.self="showPresetSaveModal = false"
+                                style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+                                <div style="background: white; padding: 24px; border-radius: 12px; max-width: 400px; width: 90%;">
+                                    <h3 style="margin-top: 0;">Save Preset</h3>
+                                    <input x-model="presetName" 
+                                        type="text" 
+                                        placeholder="Enter preset name (e.g., 'US COVID Cases')"
+                                        class="form-input"
+                                        @keyup.enter="savePreset()"
+                                        style="width: 100%; margin-bottom: 16px;">
+                                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                                        <button @click="showPresetSaveModal = false" 
+                                                style="padding: 8px 16px; background: #e5e7eb; border: none; border-radius: 6px; cursor: pointer;">
+                                            Cancel
+                                        </button>
+                                        <button @click="savePreset()" 
+                                                :disabled="!presetName.trim()"
+                                                style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                            Save
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
             
                             <div class="custom-form">
                                 <div class="form-group">
                                     <label class="dropdown-label">Data JSON URL:</label>
                                     <input type="url" x-model="customData.tableUrl" class="form-input" 
-                                        placeholder="https://example.com/data.json">
+                                        :placeholder="customData.timelapseEnabled ? 
+                                            'https://api.census.gov/data/{year}/language?get=...' : 
+                                            'https://example.com/data.json'">
+                                    <small style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; display: block;">
+                                        <span x-show="customData.timelapseEnabled">Use {year} as placeholder for timelapse mode</span>
+                                    </small>
                                 </div>
                                 
                                 <div class="form-group">
@@ -221,11 +292,54 @@
                                     <input type="number" x-model.number="customData.binCount" 
                                         min="3" max="20" class="form-input">
                                 </div>
+
+                                <div class="form-group" style="border-top: 1px solid #e5e7eb; padding-top: 15px; margin-top: 15px;">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" x-model="customData.timelapseEnabled">
+                                        <span class="dropdown-label" style="margin: 0;">Enable Timelapse Mode</span>
+                                    </label>
+                                </div>
+                                
+                                <div x-show="customData.timelapseEnabled" x-transition class="timelapse-controls" 
+                                    style="border: 1px solid #e5e7eb; padding: 15px; border-radius: 8px; background: #f9fafb;">
+                                    
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                                        <div class="form-group" style="margin: 0;">
+                                            <label class="dropdown-label" style="font-size: 0.75rem;">Start Year:</label>
+                                            <input type="number" x-model.number="customData.startYear" 
+                                                class="form-input" min="1900" max="2100" style="padding: 6px;">
+                                        </div>
+                                        
+                                        <div class="form-group" style="margin: 0;">
+                                            <label class="dropdown-label" style="font-size: 0.75rem;">End Year:</label>
+                                            <input type="number" x-model.number="customData.endYear" 
+                                                class="form-input" min="1900" max="2100" style="padding: 6px;">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group" style="margin: 0;">
+                                        <label class="dropdown-label" style="font-size: 0.75rem;">Playback Speed (ms):</label>
+                                        <input type="number" x-model.number="customData.playbackSpeed" 
+                                            class="form-input" min="100" max="5000" step="100" style="padding: 6px;">
+                                    </div>
+                                    
+                                    <div style="margin-top: 10px; font-size: 0.75rem; color: #6b7280; line-height: 1.4;">
+                                        <strong>Note:</strong> Your Data URL should contain <code style="background: #e5e7eb; padding: 2px 4px; border-radius: 3px;">{year}</code> 
+                                        which will be replaced with each year value.
+                                        <br>
+                                        Example: <code style="background: #e5e7eb; padding: 2px 4px; border-radius: 3px; font-size: 0.7rem;">
+                                            https://api.census.gov/data/{year}/language?get=...
+                                        </code>
+                                    </div>
+                                </div>
                                 
                                 <button @click="generateCustomChoropleth()" 
                                         :disabled="!customData.tableUrl || !customData.geometryUrl" 
                                         class="generate-button">
-                                    <span x-show="!customData.isLoading">Generate Choropleth</span>
+                                    <span x-show="!customData.isLoading">
+                                        <span x-show="!customData.timelapseEnabled">Generate Choropleth</span>
+                                        <span x-show="customData.timelapseEnabled">Load Timelapse Data</span>
+                                    </span>
                                     <span x-show="customData.isLoading">Loading...</span>
                                 </button>
                                 <div x-show="customData.error" class="error-message" x-text="customData.error"></div>
@@ -239,9 +353,14 @@
                         <div id="map" class="plotly-container">
                             <!--we will insert the plotly map here-->
                             <!--if no option selected, display placeholder-->
-                            <div x-show="!selectedDataset" class="map-placeholder">
+                            <!-- <div x-show="appMode === 'census' && !selectedDataset" class="map-placeholder">
                                 Select a dataset to get started
-                            </div>
+                            </div> -->
+                            
+                            <!-- Custom mode placeholder -->
+                            <!-- <div x-show="appMode === 'custom' && !customData.tableUrl" class="map-placeholder">
+                                Enter data URLs and click Generate Choropleth
+                            </div> -->
                         </div>
                         <div id="map-legend" class="map-legend" style="display: none;">
                             <div class="legend-title"></div>
