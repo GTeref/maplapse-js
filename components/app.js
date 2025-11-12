@@ -171,7 +171,7 @@ window.mapApp = () => {
             })
         },
 
-        getPaginatedTableData(){
+        get paginatedTableData(){
             const start = (this.dataTablePage - 1) * this.dataTablePageSize;
             const end = start + this.dataTablePageSize;
             return this.filteredTableData.slice(start, end);
@@ -181,7 +181,7 @@ window.mapApp = () => {
             return Math.ceil(this.filteredTableData.length / this.dataTablePageSize);
         },
 
-        
+
         //getters for computed properties
         get showDatasetOptions() {
             return this.selectedDataset !== null;  

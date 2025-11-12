@@ -234,6 +234,8 @@ export class CustomChoroplethController {
 
             const joinedData = ju.joinData(normalizedTable, normalizedGeo);
 
+            this.normalizedTableData=normalizedTable;
+
             return joinedData
         } catch (error) {
             console.error('Error processing data:', error);
@@ -267,13 +269,17 @@ export class CustomChoroplethController {
         }
     }
 
-    extractTableData(geojsonData) {
-        const nameField = this.app.customData.geometryNameField || this.app.customData.geometryIdField;
-        
-        return geojsonData.features.map(feature => ({
-            id: feature.properties._normalized_id,
-            name: feature.properties[nameField],
-            value: feature.properties.choropleth_value
+    extractTableData() {
+        if (!this.normalizedTableData) {
+            console.warn('No normalized table data available');
+            return [];
+        }
+
+        // Extract from the normalized table data
+        return this.normalizedTableData.map(row => ({
+            id: row.id,
+            name: row.name || row.id, // Use ID as fallback if no name
+            value: row.value
         })).sort((a, b) => (b.value || 0) - (a.value || 0)); // Sort by value descending
     }
 
