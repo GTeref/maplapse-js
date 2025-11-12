@@ -229,6 +229,57 @@
                                     <span x-show="customData.isLoading">Loading...</span>
                                 </button>
                                 <div x-show="customData.error" class="error-message" x-text="customData.error"></div>
+
+                                <button @click="toggleDataTable()" 
+                                        :disabled="!customData.processedData"
+                                        class="generate-button" 
+                                        style="background: #007bff; margin-top: 10px;">
+                                    <span x-text="showDataTable ? 'Hide Data Table' : 'View Data Table'"></span>
+                                </button>
+                            </div>
+                            <!-- Data table display -->
+                            <div x-show="showDataTable && customData.processedData" 
+                                x-transition 
+                                class="data-table-container">
+                                <h3 class="sidebar-title">Data Preview</h3>
+                                <div class="table-controls">
+                                    <input type="text" 
+                                        x-model="dataTableSearch" 
+                                        placeholder="Search..." 
+                                        class="form-input">
+                                    <span class="table-info" 
+                                        x-text="`Showing ${filteredTableData.length} of ${customData.processedData?.length || 0} rows`">
+                                    </span>
+                                </div>
+                                <div class="table-wrapper">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Name</th>
+                                                <th x-text="customData.tableNumericField || 'Value'"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <template x-for="row in paginatedTableData" :key="row.id">
+                                                <tr>
+                                                    <td x-text="row.id"></td>
+                                                    <td x-text="row.name || 'N/A'"></td>
+                                                    <td x-text="row.value?.toLocaleString() || 'N/A'"></td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="pagination-controls">
+                                    <button @click="dataTablePage = Math.max(1, dataTablePage - 1)" 
+                                            :disabled="dataTablePage === 1"
+                                            class="pagination-button">Previous</button>
+                                    <span x-text="`Page ${dataTablePage} of ${maxDataTablePages}`"></span>
+                                    <button @click="dataTablePage = Math.min(maxDataTablePages, dataTablePage + 1)" 
+                                            :disabled="dataTablePage === maxDataTablePages"
+                                            class="pagination-button">Next</button>
+                                </div>
                             </div>
                         </div>
                     </div>

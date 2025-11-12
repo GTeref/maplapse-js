@@ -251,6 +251,8 @@ export class CustomChoroplethController {
 
         try {
             const joinedData = await this.processData();
+
+            this.app.customData.processedData=this.extractTableData(joinedData);
             
             // Generate color scheme
             const coloredData = this.applyColorScheme(joinedData);
@@ -263,6 +265,16 @@ export class CustomChoroplethController {
         } catch (error) {
             console.error('Error generating custom choropleth:', error);
         }
+    }
+
+    extractTableData(geojsonData) {
+        const nameField = this.app.customData.geometryNameField || this.app.customData.geometryIdField;
+        
+        return geojsonData.features.map(feature => ({
+            id: feature.properties._normalized_id,
+            name: feature.properties[nameField],
+            value: feature.properties.choropleth_value
+        })).sort((a, b) => (b.value || 0) - (a.value || 0)); // Sort by value descending
     }
 
     // async fetchJsonData(url) {

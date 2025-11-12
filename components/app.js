@@ -32,8 +32,15 @@ window.mapApp = () => {
             tableNumericField: '',
             colorScheme: 'Spectral',
             binCount: 10,
-            title: ''
+            title: '',
+            processedData: null,
+
         },
+
+        showDataTable: false, 
+        dataTableSearch: '',  
+        dataTablePage: 1,    
+        dataTablePageSize: 20, 
 
         mapController: null,
         sidebarController: null,
@@ -147,6 +154,34 @@ window.mapApp = () => {
             this.customChoroplethController?.destroy();
         },
 
+        toggleDataTable() {
+            this.showDataTable = !this.showDataTable;
+        },
+
+        get filteredTableData() {
+            if (!this.customData.processedData) return [];
+
+            const search=this.dataTableSearch.toLowerCase();
+            return this.customData.processedData.filter(row=> {
+                return(
+                    row.id?.toString().toLowerCase().includes(search) ||
+                    row.name?.toLowerCase().includes(search) ||
+                    row.value?.toString().includes(search)
+                );
+            })
+        },
+
+        getPaginatedTableData(){
+            const start = (this.dataTablePage - 1) * this.dataTablePageSize;
+            const end = start + this.dataTablePageSize;
+            return this.filteredTableData.slice(start, end);
+        },
+
+        get maxDataTablePages() {
+            return Math.ceil(this.filteredTableData.length / this.dataTablePageSize);
+        },
+
+        
         //getters for computed properties
         get showDatasetOptions() {
             return this.selectedDataset !== null;  
