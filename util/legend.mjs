@@ -249,4 +249,4 @@ export const labels = {
     }
 };
 
-export { createLegend, hideLegend, formatLegendNumbers, updateLegendTheme, createSteppedColorExpression }
+export { createLegend, hideLegend, formatLegendNumbers, updateLegendTheme, createSteppedColorExpression, interpolateColors }

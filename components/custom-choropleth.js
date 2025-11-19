@@ -382,32 +382,28 @@ export class CustomChoroplethController {
 
     getColorScheme(scheme, count) {
         const schemes = {
-            'Spectral': ['#d7191c', '#fdae61', '#ffffbf', '#abd9e9', '#2c7bb6'],
-            'Reds': ['#fee5d9', '#fcbba1', '#fc9272', '#fb6a4a', '#de2d26'],
-            'Blues': ['#eff3ff', '#c6dbef', '#9ecae1', '#6baed6', '#3182bd'],
-            'Greens': ['#edf8e9', '#c7e9c0', '#a1d99b', '#74c476', '#31a354']
+            'Spectral': {
+                start: [213, 62, 79],    // #d53e4f (red)
+                end: [69, 117, 180]       // #4575b4 (blue)
+            },
+            'Reds': {
+                start: [254, 229, 217],   // #fee5d9 (light red)
+                end: [165, 15, 21]        // #a50f15 (dark red)
+            },
+            'Blues': {
+                start: [239, 243, 255],   // #eff3ff (light blue)
+                end: [49, 130, 189]       // #3182bd (dark blue)
+            },
+            'Greens': {
+                start: [237, 248, 233],   // #edf8e9 (light green)
+                end: [49, 163, 84]        // #31a354 (dark green)
+            }
         };
 
         const baseColors = schemes[scheme] || schemes['Spectral'];
         
         // Interpolate to get exact count needed
-        return this.interpolateColors(baseColors, count);
-    }
-
-    interpolateColors(colors, count) {
-        if (count <= colors.length) {
-            return colors.slice(0, count);
-        }
-        
-        const result = [];
-        const step = (colors.length - 1) / (count - 1);
-        
-        for (let i = 0; i < count; i++) {
-            const index = Math.floor(i * step);
-            result.push(colors[Math.min(index, colors.length - 1)]);
-        }
-        
-        return result;
+        return lg.interpolateColors(baseColors.start, baseColors.end, count);
     }
 
     async renderChoropleth(geojsonData) {
@@ -488,7 +484,7 @@ export class CustomChoroplethController {
                 const props = feature.properties;
                 const featureId=props._normalized_id
 
-                const nameField=this.app.customData.geometryIdField;
+                const nameField=this.app.customData.geometryIdField || this.app.customData.geometryNameField;
                 const displayName=props[nameField] || props._normalized_id || 'Unknown';
 
                 const displayValue = props.choropleth_value !== null && props.choropleth_value !== undefined

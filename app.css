@@ -83,7 +83,7 @@ body {
 .sidebar-container {
   background-color: white;
   border-right: 1px solid #e5e7eb;
-  width: 22rem;
+  width: 30rem;
   height: 100%;
   transition: transform 0.3s ease-in-out;
   flex-shrink: 0;
@@ -94,7 +94,7 @@ body {
 }
 
 .sidebar-container.closed {
-  transform: translateX(-22rem);
+  transform: translateX(-30rem);
 }
 
 .sidebar-content {
@@ -217,7 +217,7 @@ body {
   position: relative;
   min-width: 0;
   height: 100%;
-  margin-left: 22rem;
+  margin-left: 30rem;
   transition: margin-left 0.3s ease-in-out;
 }
 

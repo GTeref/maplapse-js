@@ -26,9 +26,10 @@ window.mapApp = () => {
         customData: {
             tableUrl: '',
             geometryUrl: '',
+            geometryPreset: '',
             tableIdField: '',
             geometryIdField: '',
-            // geometryNameField: '',
+            geometryNameField: '',
             tableNumericField: '',
             colorScheme: 'Spectral',
             binCount: 10,
@@ -217,11 +218,32 @@ window.mapApp = () => {
         
         async generateCustomChoropleth() {
             console.log('Generating custom choropleth...');
+            console.log('Table URL:', this.customData.tableUrl);
+            console.log('Geometry URL:', this.customData.geometryUrl);
+            console.log('Geometry Preset:', this.customData.geometryPreset);
+            console.log('Color Scheme:', this.customData.colorScheme);
+            console.log('Bin Count:', this.customData.binCount);
             
             this.customData.isLoading = true;
             this.customData.error = null;
             
             try {
+                //debug form validation
+                if (!this.customData.tableUrl) {
+                    throw new Error('Data JSON URL is required');
+                }
+                if (!this.customData.geometryUrl) {
+                    throw new Error('Geometry URL is required. Please select a preset or enter a custom URL.');
+                }
+                if (!this.customData.tableIdField) {
+                    throw new Error('Data ID Field is required');
+                }
+                if (!this.customData.geometryIdField) {
+                    throw new Error('Geometry ID Field is required');
+                }
+                if (!this.customData.tableNumericField) {
+                    throw new Error('Data Numeric Field is required');
+                }
                 if (!this.customChoroplethController) {
                     this.customChoroplethController = new CustomChoroplethController(this);
                 }
