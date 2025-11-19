@@ -815,6 +815,35 @@ button:focus {
     cursor: not-allowed;
 }
 
+.form-section {
+    padding: 15px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.form-section:last-of-type {
+    margin-bottom: 20px;
+}
+
+.form-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.form-section .form-group {
+    margin-bottom: 12px;
+}
+
+.form-section .form-group:last-child {
+    margin-bottom: 0;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .legend-step-color {
