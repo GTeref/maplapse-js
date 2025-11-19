@@ -83,7 +83,7 @@ body {
 .sidebar-container {
   background-color: white;
   border-right: 1px solid #e5e7eb;
-  width: 16rem;
+  width: 22rem;
   height: 100%;
   transition: transform 0.3s ease-in-out;
   flex-shrink: 0;
@@ -94,7 +94,7 @@ body {
 }
 
 .sidebar-container.closed {
-  transform: translateX(-16rem);
+  transform: translateX(-22rem);
 }
 
 .sidebar-content {
@@ -217,7 +217,7 @@ body {
   position: relative;
   min-width: 0;
   height: 100%;
-  margin-left: 16rem;
+  margin-left: 22rem;
   transition: margin-left 0.3s ease-in-out;
 }
 
@@ -831,4 +831,28 @@ button:focus {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.form-group input[readonly] {
+    cursor: not-allowed;
+}
+
+.error-message {
+    padding: 10px;
+    background: #fee;
+    border: 1px solid #fcc;
+    border-radius: 4px;
+    color: #c33;
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+/* Add some spacing between form groups */
+.form-group + .form-group {
+    margin-top: 0;  /* Already has gap from flex */
+}
+
+/* Make the dropdown select options more readable */
+.dropdown-select option {
+    padding: 8px;
 }

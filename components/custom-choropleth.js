@@ -488,7 +488,7 @@ export class CustomChoroplethController {
                 const props = feature.properties;
                 const featureId=props._normalized_id
 
-                const nameField=this.app.customData.geometryNameField || this.app.customData.geometryIdField;
+                const nameField=this.app.customData.geometryIdField;
                 const displayName=props[nameField] || props._normalized_id || 'Unknown';
 
                 const displayValue = props.choropleth_value !== null && props.choropleth_value !== undefined
